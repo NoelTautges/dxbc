@@ -1,4 +1,4 @@
-use md5;
+use crate::md5;
 
 pub fn checksum(module: &[u8]) -> [u32; 4] {
     let mut cxt = md5::Context::new();

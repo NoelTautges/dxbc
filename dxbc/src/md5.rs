@@ -28,17 +28,9 @@
 // https://people.csail.mit.edu/rivest/Md5.c
 // https://tools.ietf.org/html/rfc1321
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
-#[cfg(feature = "std")]
-use std as core;
-
 use core::convert;
 use core::fmt;
 use core::ops;
-
-#[cfg(feature = "std")]
-use core::io;
 
 /// A digest.
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
@@ -393,13 +385,13 @@ mod tests {
             "57edf4a22be3c955ac49da2e2107b67a",
         ];
         for (input, &output) in inputs.iter().zip(outputs.iter()) {
-            assert_eq!(format!("{:x}", ::compute(input)), output);
+            assert_eq!(format!("{:x}", super::compute(input)), output);
         }
     }
 
     #[test]
     fn index() {
-        let mut digest = ::compute(b"abc");
+        let mut digest = super::compute(b"abc");
         assert_eq!(digest[0], 0x90);
         assert_eq!(&digest[0], &0x90);
         assert_eq!(&mut digest[0], &mut 0x90);
@@ -409,7 +401,7 @@ mod tests {
     fn overflow_count() {
         use std::io::prelude::Write;
         let data = vec![0; 8 * 1024 * 1024];
-        let mut context = ::Context::new();
+        let mut context = super::Context::new();
         for _ in 0..64 {
             context.write(&data).unwrap();
         }
@@ -425,7 +417,7 @@ mod tests {
         use std::io::prelude::Write;
         use std::u32::MAX;
         let data = vec![0; MAX as usize + 1];
-        let mut context = ::Context::new();
+        let mut context = super::Context::new();
         context.write(&data).unwrap();
         assert_eq!(
             format!("{:x}", context.compute()),
