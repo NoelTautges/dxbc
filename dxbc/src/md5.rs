@@ -1,4 +1,10 @@
 //! The [MD5] hash function.
+//! 
+//! This is a vendored version of the [`md5`][external] crate.
+//! It exists because the [`PADDING`] and [`transform`] items are not public
+//! within the published version.
+//! 
+//! Do not remove it.
 //!
 //! ## Example
 //!
@@ -19,6 +25,8 @@
 //! constructions, including HMAC-MD5.
 //!
 //! [MD5]: https://en.wikipedia.org/wiki/MD5
+//! 
+//! [external]: https://crates.io/crates/md5
 //!
 //! [ACM1724151]: https://dl.acm.org/citation.cfm?id=1724151
 //! [RFC6151]: https://tools.ietf.org/html/rfc6151
