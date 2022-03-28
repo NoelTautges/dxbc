@@ -1,5 +1,3 @@
-#![feature(libc)]
-
 extern crate byteorder;
 #[macro_use]
 extern crate bitflags;

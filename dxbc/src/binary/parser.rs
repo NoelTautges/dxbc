@@ -1,7 +1,6 @@
 use super::error;
-
-use dr;
 use super::decoder;
+use crate::dr;
 
 use std::mem;
 use std::str;
@@ -48,11 +47,11 @@ fn try_consume(action: Action) -> Result<(), State> {
 
 pub struct Parser<'c, 'd> {
     decoder: decoder::Decoder<'d>,
-    consumer: &'c mut Consumer,
+    consumer: &'c mut dyn Consumer,
 }
 
 impl<'c, 'd> Parser<'c, 'd> {
-    pub fn new(binary: &'d [u8], consumer: &'c mut Consumer) -> Self {
+    pub fn new(binary: &'d [u8], consumer: &'c mut dyn Consumer) -> Self {
         Parser {
             decoder: decoder::Decoder::new(binary),
             consumer,

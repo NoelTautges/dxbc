@@ -1,4 +1,4 @@
-use binary::*;
+use crate::binary::*;
 
 #[repr(C)]
 #[derive(Debug)]

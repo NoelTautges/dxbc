@@ -1,8 +1,6 @@
-use d3d11tokenizedprogramformat::*;
+use crate::binary::*;
+use crate::d3d11tokenizedprogramformat::*;
 
-use binary::*;
-
-use std::slice;
 use std::mem;
 use std::marker::PhantomData;
 

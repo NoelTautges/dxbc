@@ -1,4 +1,4 @@
-use binary::*;
+use crate::binary::*;
 
 use std::mem;
 
@@ -14,7 +14,7 @@ pub enum RegisterComponentType {
 impl RegisterComponentType {
     pub fn from_word(word: u32) -> Self {
         match word {
-            0...3 => unsafe { mem::transmute(word) },
+            0..=3 => unsafe { mem::transmute(word) },
             _ => unreachable!()
         }
     }
@@ -50,8 +50,8 @@ pub enum SemanticName {
 impl SemanticName {
     pub fn from_word(word: u32) -> Self {
         match word {
-            0...16 |
-            64...68 => unsafe { mem::transmute(word) },
+            0..=16 |
+            64..=68 => unsafe { mem::transmute(word) },
             _ => unreachable!()
         }
     }

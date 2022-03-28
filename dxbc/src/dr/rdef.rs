@@ -1,5 +1,4 @@
-use super::{ResourceReturnType};
-use binary::*;
+use crate::binary::*;
 
 bitflags! {
     pub struct ShaderInputFlags: u32 {

@@ -93,9 +93,9 @@ implement!(UpperHex, "{:02X}");
 /// A context.
 #[derive(Clone)]
 pub struct Context {
-    buffer: [u8; 64],
-    count: [u32; 2],
-    state: [u32; 4],
+    pub buffer: [u8; 64],
+    pub count: [u32; 2],
+    pub state: [u32; 4],
 }
 
 pub const PADDING: [u8; 64] = [
@@ -407,11 +407,10 @@ mod tests {
 
     #[test]
     fn overflow_count() {
-        use std::io::prelude::Write;
         let data = vec![0; 8 * 1024 * 1024];
         let mut context = super::Context::new();
         for _ in 0..64 {
-            context.write(&data).unwrap();
+            context.consume(&data);
         }
         assert_eq!(
             format!("{:x}", context.compute()),
@@ -422,11 +421,10 @@ mod tests {
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn overflow_length() {
-        use std::io::prelude::Write;
         use std::u32::MAX;
         let data = vec![0; MAX as usize + 1];
         let mut context = super::Context::new();
-        context.write(&data).unwrap();
+        context.consume(&data);
         assert_eq!(
             format!("{:x}", context.compute()),
             "c9a5a6878d97b48cc965c1e41859f034"

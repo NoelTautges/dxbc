@@ -1,9 +1,9 @@
-use dr::shex::{ResourceDimension, ResourceReturnType};
-use dr::{IStatChunk, IOsgnChunk, RdefChunk};
-
-use byteorder::{ByteOrder, LittleEndian};
-use checksum;
-use d3d11tokenizedprogramformat::*;
+use super::isgn::IOsgnChunk;
+use super::rdef::RdefChunk;
+use super::shex::{ResourceDimension, ResourceReturnType};
+use super::stat::IStatChunk;
+use crate::checksum;
+use crate::d3d11tokenizedprogramformat::*;
 
 use std::{slice, mem};
 
@@ -498,7 +498,7 @@ impl<'a> Builder<'a> {
         // finally, patch in size and checksum
         let len = 4 * module.dwords.len() as u32;
         module.set_u32(size_pos, len);
-        let checksum = ::checksum(module.as_bytes());
+        let checksum = checksum(module.as_bytes());
         module.set_u32(checksum_pos,     checksum[0]);
         module.set_u32(checksum_pos + 1, checksum[1]);
         module.set_u32(checksum_pos + 2, checksum[2]);
