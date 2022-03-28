@@ -3,7 +3,6 @@
 extern crate byteorder;
 #[macro_use]
 extern crate bitflags;
-//extern crate md5;
 
 pub mod binary;
 pub mod dr;
