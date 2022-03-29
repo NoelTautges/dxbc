@@ -15,7 +15,7 @@ impl RegisterComponentType {
     pub fn from_word(word: u32) -> Self {
         match word {
             0..=3 => unsafe { mem::transmute(word) },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -50,9 +50,8 @@ pub enum SemanticName {
 impl SemanticName {
     pub fn from_word(word: u32) -> Self {
         match word {
-            0..=16 |
-            64..=68 => unsafe { mem::transmute(word) },
-            _ => unreachable!()
+            0..=16 | 64..=68 => unsafe { mem::transmute(word) },
+            _ => unreachable!(),
         }
     }
 }
@@ -80,7 +79,10 @@ impl InputOutputElement {
         let rw_mask = decoder.read_u8();
         decoder.skip(2);
 
-        let name = decoder.seek(name_offset as usize).string().map_err(State::DecoderError)?;
+        let name = decoder
+            .seek(name_offset as usize)
+            .string()
+            .map_err(State::DecoderError)?;
 
         Ok(Self {
             name,
@@ -110,8 +112,6 @@ impl IOsgnChunk {
             elements.push(InputOutputElement::parse(decoder)?);
         }
 
-        Ok(IOsgnChunk {
-            elements,
-        })
+        Ok(IOsgnChunk { elements })
     }
 }

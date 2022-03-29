@@ -9,21 +9,20 @@ pub enum ResourceReturnType {
     Float = 5,
     Mixed = 6,
     Double = 7,
-    Continued = 8
+    Continued = 8,
 }
 
-pub mod rdef;
+pub mod builder;
 pub mod isgn;
+pub mod rdef;
 pub mod shex;
 pub mod stat;
-pub mod builder;
 
-pub use self::rdef::*;
+pub use self::builder::*;
 pub use self::isgn::*;
+pub use self::rdef::*;
 pub use self::shex::*;
 pub use self::stat::*;
-pub use self::builder::*;
-
 
 #[repr(C)]
 #[derive(Debug)]

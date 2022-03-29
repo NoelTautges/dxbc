@@ -4,7 +4,7 @@ use super::shex::{ResourceDimension, ResourceReturnType};
 use super::stat::IStatChunk;
 use crate::checksum;
 
-use std::{slice, mem};
+use std::{mem, slice};
 use winapi::um::d3d11tokenizedprogramformat::*;
 
 const DXBC_MAGIC: u32 = 0x43425844;
@@ -30,9 +30,7 @@ pub struct DxbcModule {
 
 impl DxbcModule {
     pub fn new() -> Self {
-        DxbcModule {
-            dwords: Vec::new()
-        }
+        DxbcModule { dwords: Vec::new() }
     }
 
     pub fn position(&self) -> usize {
@@ -61,11 +59,13 @@ impl DxbcModule {
         // NOTE: fxc pads with 0xABAB.. pattern
         for chunk in text.as_bytes().chunks(4) {
             let data = match *chunk {
-                [d, c, b, a] => ((a as u32) << 24) | ((b as u32) << 16) | ((c as u32) << 8) | d as u32,
+                [d, c, b, a] => {
+                    ((a as u32) << 24) | ((b as u32) << 16) | ((c as u32) << 8) | d as u32
+                }
                 [c, b, a] => ((a as u32) << 16) | ((b as u32) << 8) | (c as u32),
                 [b, a] => ((a as u32) << 8) | (b as u32),
                 [a] => a as u32,
-                _ => unreachable!()
+                _ => unreachable!(),
             };
 
             self.write_u32(data);
@@ -130,9 +130,9 @@ impl DxbcModule {
         let resource_bindings_pos = self.position();
         self.write_u32(0);
 
-        let version_tok = (((rdef.shader_ty as u32) << 16) & 0xffff0000) |
-                          (((rdef.major as u32) << 4) & 0x000000f0) |
-                          (rdef.minor as u32 & 0x0000000f);
+        let version_tok = (((rdef.shader_ty as u32) << 16) & 0xffff0000)
+            | (((rdef.major as u32) << 4) & 0x000000f0)
+            | (rdef.minor as u32 & 0x0000000f);
         self.write_u32(version_tok);
         self.write_u32(rdef.flags);
         let author_pos = self.position();
@@ -222,11 +222,11 @@ impl DxbcModule {
         self.write_u32(0);
         let chunk_start = self.position();
 
-        self.write_u32(
-            ENCODE_D3D10_SB_TOKENIZED_PROGRAM_VERSION_TOKEN(
-                D3D10_SB_VERTEX_SHADER, 5, 0
-            )
-        );
+        self.write_u32(ENCODE_D3D10_SB_TOKENIZED_PROGRAM_VERSION_TOKEN(
+            D3D10_SB_VERTEX_SHADER,
+            5,
+            0,
+        ));
 
         let word_sz_pos = self.position();
         self.write_u32(0);
@@ -240,10 +240,17 @@ impl DxbcModule {
         self.set_u32(chunk_sz_pos, 4 * chunk_sz as u32);
     }
 
-    pub fn write_opcode(&mut self, op: u32, instruction_len: u32, test: Option<u32>, saturated: bool, extended: &[OpcodeEx]) {
-        let mut opcode = ENCODE_D3D10_SB_OPCODE_TYPE(op) |
-            ENCODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(instruction_len) |
-            ENCODE_D3D10_SB_INSTRUCTION_SATURATE(saturated as u32);
+    pub fn write_opcode(
+        &mut self,
+        op: u32,
+        instruction_len: u32,
+        test: Option<u32>,
+        saturated: bool,
+        extended: &[OpcodeEx],
+    ) {
+        let mut opcode = ENCODE_D3D10_SB_OPCODE_TYPE(op)
+            | ENCODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(instruction_len)
+            | ENCODE_D3D10_SB_INSTRUCTION_SATURATE(saturated as u32);
 
         if !extended.is_empty() {
             opcode |= ENCODE_D3D10_SB_OPCODE_EXTENDED(1);
@@ -264,41 +271,68 @@ impl DxbcModule {
         match opcode {
             OpcodeEx::UvOffset(u, v, w) => {
                 self.write_u32(
-                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(D3D10_SB_EXTENDED_OPCODE_SAMPLE_CONTROLS) |
-                    ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_U, u) |
-                    ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_V, v) |
-                    ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_W, w) |
-                    if more { ENCODE_D3D10_SB_OPCODE_EXTENDED(1) } else { 0 }
+                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(D3D10_SB_EXTENDED_OPCODE_SAMPLE_CONTROLS)
+                        | ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(
+                            D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_U,
+                            u,
+                        )
+                        | ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(
+                            D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_V,
+                            v,
+                        )
+                        | ENCODE_IMMEDIATE_D3D10_SB_ADDRESS_OFFSET(
+                            D3D10_SB_IMMEDIATE_ADDRESS_OFFSET_W,
+                            w,
+                        )
+                        | if more {
+                            ENCODE_D3D10_SB_OPCODE_EXTENDED(1)
+                        } else {
+                            0
+                        },
                 );
-            },
+            }
             OpcodeEx::Dimension(dim, stride) => {
                 self.write_u32(
-                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(D3D11_SB_EXTENDED_OPCODE_RESOURCE_DIM) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_DIMENSION(dim as u32) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_DIMENSION_STRUCTURE_STRIDE(stride) |
-                    if more { ENCODE_D3D10_SB_OPCODE_EXTENDED(1) } else { 0 }
+                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(D3D11_SB_EXTENDED_OPCODE_RESOURCE_DIM)
+                        | ENCODE_D3D11_SB_EXTENDED_RESOURCE_DIMENSION(dim as u32)
+                        | ENCODE_D3D11_SB_EXTENDED_RESOURCE_DIMENSION_STRUCTURE_STRIDE(stride)
+                        | if more {
+                            ENCODE_D3D10_SB_OPCODE_EXTENDED(1)
+                        } else {
+                            0
+                        },
                 );
             }
             OpcodeEx::ResourceReturnType(x, y, z, w) => {
                 self.write_u32(
-                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(D3D11_SB_EXTENDED_OPCODE_RESOURCE_RETURN_TYPE) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(x as u32, 0) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(y as u32, 1) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(z as u32, 2) |
-                    ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(w as u32, 3) |
-                    if more { ENCODE_D3D10_SB_OPCODE_EXTENDED(1) } else { 0 }
+                    ENCODE_D3D10_SB_EXTENDED_OPCODE_TYPE(
+                        D3D11_SB_EXTENDED_OPCODE_RESOURCE_RETURN_TYPE,
+                    ) | ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(x as u32, 0)
+                        | ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(y as u32, 1)
+                        | ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(z as u32, 2)
+                        | ENCODE_D3D11_SB_EXTENDED_RESOURCE_RETURN_TYPE(w as u32, 3)
+                        | if more {
+                            ENCODE_D3D10_SB_OPCODE_EXTENDED(1)
+                        } else {
+                            0
+                        },
                 );
             }
         }
     }
 
-    pub fn write_operand(&mut self, op: u32, modifier: Modifier, component_mode: NumComponent, immediates: &[Immediate]) {
+    pub fn write_operand(
+        &mut self,
+        op: u32,
+        modifier: Modifier,
+        component_mode: NumComponent,
+        immediates: &[Immediate],
+    ) {
         debug_assert!(immediates.len() < 4);
 
         let mut operand = ENCODE_D3D10_SB_OPERAND_TYPE(op);
 
         if let Modifier::None = modifier {
-
         } else {
             operand |= ENCODE_D3D10_SB_OPERAND_EXTENDED(1);
         }
@@ -328,29 +362,34 @@ impl DxbcModule {
             1 => D3D10_SB_OPERAND_INDEX_1D,
             2 => D3D10_SB_OPERAND_INDEX_2D,
             3 => D3D10_SB_OPERAND_INDEX_3D,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         operand |= ENCODE_D3D10_SB_OPERAND_INDEX_DIMENSION(immediate_arity);
 
         match component_mode {
-            NumComponent::D0 | NumComponent::D1 => {},
+            NumComponent::D0 | NumComponent::D1 => {}
             NumComponent::D4(mode) => match mode {
                 ComponentMode::Mask(mask) => {
-                    operand |=
-                        ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(D3D10_SB_OPERAND_4_COMPONENT_MASK_MODE) |
-                        mask as u32;
-                },
+                    operand |= ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(
+                        D3D10_SB_OPERAND_4_COMPONENT_MASK_MODE,
+                    ) | mask as u32;
+                }
                 ComponentMode::Swizzle(x, y, z, w) => {
-                    operand |=
-                        ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_MODE) |
-                        ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE(x as u32 >> 5, y as u32 >> 5, z as u32 >> 5, w as u32 >> 5);
-                },
+                    operand |= ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(
+                        D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_MODE,
+                    ) | ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE(
+                        x as u32 >> 5,
+                        y as u32 >> 5,
+                        z as u32 >> 5,
+                        w as u32 >> 5,
+                    );
+                }
                 ComponentMode::Select(comp) => {
-                    operand |=
-                        ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(D3D10_SB_OPERAND_4_COMPONENT_SELECT_1_MODE) |
-                        ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECT_1(comp as u32 >> 5);
-                },
+                    operand |= ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECTION_MODE(
+                        D3D10_SB_OPERAND_4_COMPONENT_SELECT_1_MODE,
+                    ) | ENCODE_D3D10_SB_OPERAND_4_COMPONENT_SELECT_1(comp as u32 >> 5);
+                }
             },
         }
 
@@ -364,9 +403,7 @@ impl DxbcModule {
         };
 
         if let Some(modifier) = operand_modifier {
-            self.write_u32(
-                ENCODE_D3D10_SB_EXTENDED_OPERAND_MODIFIER(modifier)
-            );
+            self.write_u32(ENCODE_D3D10_SB_EXTENDED_OPERAND_MODIFIER(modifier));
         }
 
         for imm in immediates {
@@ -380,9 +417,7 @@ impl DxbcModule {
                     self.write_u32(val as u32);
                     None
                 }
-                Immediate::Relative(ref rel) => {
-                    Some(rel)
-                }
+                Immediate::Relative(ref rel) => Some(rel),
                 Immediate::U32Relative(val, ref rel) => {
                     self.write_u32(val);
                     Some(rel)
@@ -450,9 +485,7 @@ impl<'a> Builder<'a> {
         self.stat = Some(stat);
     }
 
-    pub fn set_profile(&mut self) {
-
-    }
+    pub fn set_profile(&mut self) {}
 
     // TODO: determine fallibility
     #[allow(clippy::result_unit_err)]
@@ -477,7 +510,6 @@ impl<'a> Builder<'a> {
         for _ in 0..chunk_count {
             module.write_u32(0);
         }
-
 
         if let Some(ref rdef) = self.rdef {
             let pos = module.position() * 4;
@@ -507,7 +539,7 @@ impl<'a> Builder<'a> {
         let len = 4 * module.dwords.len() as u32;
         module.set_u32(size_pos, len);
         let checksum = checksum(module.as_bytes());
-        module.set_u32(checksum_pos,     checksum[0]);
+        module.set_u32(checksum_pos, checksum[0]);
         module.set_u32(checksum_pos + 1, checksum[1]);
         module.set_u32(checksum_pos + 2, checksum[2]);
         module.set_u32(checksum_pos + 3, checksum[3]);
@@ -547,7 +579,7 @@ pub enum Modifier {
     None,
     Neg,
     Abs,
-    AbsNeg
+    AbsNeg,
 }
 
 bitflags! {
@@ -581,7 +613,7 @@ pub enum NumComponent {
 #[derive(Debug)]
 pub enum Address {
     Constant(u32),
-    Relative(IndexOperandType)
+    Relative(IndexOperandType),
 }
 
 #[derive(Debug)]
@@ -618,24 +650,45 @@ pub enum IndexOperandType {
 
 #[derive(Debug)]
 pub enum Instruction {
-    DclGlobalFlags { flags: GlobalFlags },
-    DclTemps { count: u32 },
-    DclOutputSiv { register: Operand, semantic: Semantic },
-    DclInput { register: Operand },
-    Add { dest: Operand, a: Operand, b: Operand, saturated: bool },
-    Mul { dest: Operand, a: Operand, b: Operand, saturated: bool },
-    Ret
+    DclGlobalFlags {
+        flags: GlobalFlags,
+    },
+    DclTemps {
+        count: u32,
+    },
+    DclOutputSiv {
+        register: Operand,
+        semantic: Semantic,
+    },
+    DclInput {
+        register: Operand,
+    },
+    Add {
+        dest: Operand,
+        a: Operand,
+        b: Operand,
+        saturated: bool,
+    },
+    Mul {
+        dest: Operand,
+        a: Operand,
+        b: Operand,
+        saturated: bool,
+    },
+    Ret,
 }
 
 #[derive(Copy, Clone)]
 pub enum OpcodeEx {
     UvOffset(u32, u32, u32),
     Dimension(ResourceDimension, u32),
-    ResourceReturnType(ResourceReturnType, ResourceReturnType, ResourceReturnType, ResourceReturnType),
+    ResourceReturnType(
+        ResourceReturnType,
+        ResourceReturnType,
+        ResourceReturnType,
+        ResourceReturnType,
+    ),
 }
-
-
-
 
 impl Instruction {
     fn get_opcode(&self) -> u32 {
@@ -656,8 +709,9 @@ impl Instruction {
         // TODO: encode other instructions
         #[allow(unreachable_patterns)]
         match self {
-            Instruction::Add { saturated, .. } |
-            Instruction::Mul { saturated, .. } => { module.write_opcode(opcode, 0, None, *saturated, &[]); }
+            Instruction::Add { saturated, .. } | Instruction::Mul { saturated, .. } => {
+                module.write_opcode(opcode, 0, None, *saturated, &[]);
+            }
 
             Instruction::DclGlobalFlags { flags } => {
                 let opcode_pos = module.position();
@@ -666,13 +720,14 @@ impl Instruction {
                 let opcode = module.get_u32(opcode_pos);
                 module.set_u32(opcode_pos, opcode | (flags.bits() & 0x00fff800));
             }
-            Instruction::DclOutputSiv { .. } |
-            Instruction::DclInput { .. } |
-            Instruction::DclTemps { .. } |
-            Instruction::Ret => { module.write_opcode(opcode, 0, None, false, &[]); }
+            Instruction::DclOutputSiv { .. }
+            | Instruction::DclInput { .. }
+            | Instruction::DclTemps { .. }
+            | Instruction::Ret => {
+                module.write_opcode(opcode, 0, None, false, &[]);
+            }
             _ => {}
         }
-
     }
 
     fn encode(&self, module: &mut DxbcModule) {
@@ -681,16 +736,16 @@ impl Instruction {
         self.encode_opcode(module);
 
         match self {
-            Instruction::Add { dest, a, b, .. } |
-            Instruction::Mul { dest, a, b, .. } => {
+            Instruction::Add { dest, a, b, .. } | Instruction::Mul { dest, a, b, .. } => {
                 dest.encode(module);
                 a.encode(module);
                 b.encode(module);
             }
-            &Instruction::DclTemps { count: val } => {
-                module.write_u32(val)
-            }
-            &Instruction::DclOutputSiv { ref register, semantic } => {
+            &Instruction::DclTemps { count: val } => module.write_u32(val),
+            &Instruction::DclOutputSiv {
+                ref register,
+                semantic,
+            } => {
                 register.encode(module);
                 module.write_u32(semantic as u32)
             }
@@ -705,7 +760,10 @@ impl Instruction {
         let sz = end - start;
         let opcode = module.get_u32(start);
 
-        module.set_u32(start, opcode | ENCODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(sz as u32));
+        module.set_u32(
+            start,
+            opcode | ENCODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(sz as u32),
+        );
     }
 }
 
@@ -713,7 +771,7 @@ impl Instruction {
 pub struct Operand {
     ty: OperandType,
     modifiers: Modifier,
-    component_mode: NumComponent
+    component_mode: NumComponent,
 }
 
 impl Operand {
@@ -721,7 +779,7 @@ impl Operand {
         Operand {
             ty,
             modifiers,
-            component_mode
+            component_mode,
         }
     }
 
@@ -741,24 +799,33 @@ impl Operand {
         // TODO: encode other operand types
         #[allow(unused_variables)]
         match &self.ty {
-            &OperandType::Register(reg) => {
-                module.write_operand(D3D10_SB_OPERAND_TYPE_TEMP, self.modifiers, self.component_mode, &[Immediate::U32(reg)])
-            },
-            &OperandType::Input(reg) => {
-                module.write_operand(D3D10_SB_OPERAND_TYPE_INPUT, self.modifiers, self.component_mode, &[Immediate::U32(reg)])
-            },
-            &OperandType::Output(reg) => {
-                module.write_operand(D3D10_SB_OPERAND_TYPE_OUTPUT, self.modifiers, self.component_mode, &[Immediate::U32(reg)])
-            },
-            OperandType::Imm32(imm) => {},
-            OperandType::Imm32x2(imm0, imm1) => {},
-            OperandType::Imm32x3(imm0, imm1, imm2) => {},
-            OperandType::Imm32x4(imm0, imm1, imm2, imm3) => {},
-            OperandType::Resource(reg) => {},
-            OperandType::Sampler(reg) => {},
-            OperandType::IndexableRegister(reg, index) => {},
-            OperandType::ConstantBuffer(reg, index) => {},
-            OperandType::CustomData(data) => {},
+            &OperandType::Register(reg) => module.write_operand(
+                D3D10_SB_OPERAND_TYPE_TEMP,
+                self.modifiers,
+                self.component_mode,
+                &[Immediate::U32(reg)],
+            ),
+            &OperandType::Input(reg) => module.write_operand(
+                D3D10_SB_OPERAND_TYPE_INPUT,
+                self.modifiers,
+                self.component_mode,
+                &[Immediate::U32(reg)],
+            ),
+            &OperandType::Output(reg) => module.write_operand(
+                D3D10_SB_OPERAND_TYPE_OUTPUT,
+                self.modifiers,
+                self.component_mode,
+                &[Immediate::U32(reg)],
+            ),
+            OperandType::Imm32(imm) => {}
+            OperandType::Imm32x2(imm0, imm1) => {}
+            OperandType::Imm32x3(imm0, imm1, imm2) => {}
+            OperandType::Imm32x4(imm0, imm1, imm2, imm3) => {}
+            OperandType::Resource(reg) => {}
+            OperandType::Sampler(reg) => {}
+            OperandType::IndexableRegister(reg, index) => {}
+            OperandType::ConstantBuffer(reg, index) => {}
+            OperandType::CustomData(data) => {}
         }
     }
 

@@ -56,7 +56,7 @@ struct Array {
 }
 #[derive(Debug, Clone)]
 struct Structure {
-    members: Vec<Ty>
+    members: Vec<Ty>,
 }
 #[derive(Debug, Clone)]
 struct Image {
@@ -103,7 +103,7 @@ enum Composite {
 enum Abstract {
     Void,
     Bool,
-    Pointer(Pointer)
+    Pointer(Pointer),
 }
 
 #[derive(Debug, Clone)]
@@ -176,14 +176,14 @@ impl Metadata {
                     let ty = types[id as usize].clone().unwrap().scalar().unwrap();
                     types[result_id as usize] = Some(Ty::Vector(Vector { ty, count }));
                 }
-                spirv::Op::TypeMatrix => {
-                }
+                spirv::Op::TypeMatrix => {}
                 spirv::Op::TypePointer => {
-                    let storage_class = if let spv_dr::Operand::StorageClass(class) = instr.operands[0] {
-                        class
-                    } else {
-                        unimplemented!()
-                    };
+                    let storage_class =
+                        if let spv_dr::Operand::StorageClass(class) = instr.operands[0] {
+                            class
+                        } else {
+                            unimplemented!()
+                        };
                     let id = if let spv_dr::Operand::IdRef(id) = instr.operands[1] {
                         id
                     } else {
@@ -269,7 +269,7 @@ impl Metadata {
                 }
 
                 // TODO:
-                _ => unimplemented!()
+                _ => unimplemented!(),
             };
 
             let decorations = &mut decorations[id as usize];
@@ -287,10 +287,7 @@ impl Metadata {
         let decorations = Self::conv_decorations(module);
         let types = Self::conv_types(module);
 
-        Metadata {
-            decorations,
-            types,
-        }
+        Metadata { decorations, types }
     }
 
     fn get_decorations(&self, id: u32) -> &[sr::Decoration] {
@@ -316,15 +313,19 @@ impl SpirvModule {
         // TODO: convert other variable types
         #[allow(unused_variables)]
         let (component_type, component_count) = match ty {
-            Ty::Vector(Vector { ty, count }) => {
-                match ty {
-                    Scalar::Numerical(Numerical::Integer(Integer::Uint32)) => (dr::RegisterComponentType::Uint32, count),
-                    Scalar::Numerical(Numerical::Integer(Integer::Int32)) => (dr::RegisterComponentType::Int32, count),
-                    Scalar::Numerical(Numerical::Float(Float::Float32)) => (dr::RegisterComponentType::Float32, count),
-                    _ => unimplemented!()
+            Ty::Vector(Vector { ty, count }) => match ty {
+                Scalar::Numerical(Numerical::Integer(Integer::Uint32)) => {
+                    (dr::RegisterComponentType::Uint32, count)
                 }
-            }
-            _ => unimplemented!()
+                Scalar::Numerical(Numerical::Integer(Integer::Int32)) => {
+                    (dr::RegisterComponentType::Int32, count)
+                }
+                Scalar::Numerical(Numerical::Float(Float::Float32)) => {
+                    (dr::RegisterComponentType::Float32, count)
+                }
+                _ => unimplemented!(),
+            },
+            _ => unimplemented!(),
         };
 
         let mut elem = dr::InputOutputElement {
@@ -349,7 +350,7 @@ impl SpirvModule {
                         // TODO:
                         _ => {}
                     }
-                },
+                }
                 &sr::Decoration::Location(location) => {
                     // TODO:
                     elem.semantic_index = location;
@@ -372,10 +373,7 @@ impl SpirvModule {
         let meta = Metadata::from_module(&module);
 
         println!("{:#?}", meta);
-        SpirvModule {
-            module,
-            meta,
-        }
+        SpirvModule { module, meta }
     }
 
     fn find_function(&self, id: &spv_dr::Operand) -> Option<&spv_dr::Function> {
@@ -398,7 +396,12 @@ impl SpirvModule {
         })
     }
 
-    fn add_io_element(&self, inputs: &mut Vec<dr::InputOutputElement>, outputs: &mut Vec<dr::InputOutputElement>, variable_id: u32) {
+    fn add_io_element(
+        &self,
+        inputs: &mut Vec<dr::InputOutputElement>,
+        outputs: &mut Vec<dr::InputOutputElement>,
+        variable_id: u32,
+    ) {
         for decl in &self.module.types_global_values {
             if decl.class.opcode == spirv::Op::Variable {
                 let id = if let Some(id) = decl.result_id {
@@ -407,7 +410,9 @@ impl SpirvModule {
                     unimplemented!()
                 };
 
-                if variable_id != id { continue; }
+                if variable_id != id {
+                    continue;
+                }
 
                 let ty_id = if let Some(id) = decl.result_type {
                     id
@@ -420,8 +425,12 @@ impl SpirvModule {
                     let elem = self.conv_variable(ty, id);
 
                     match storage_class {
-                        spirv::StorageClass::Input => { inputs.push(elem); }
-                        spirv::StorageClass::Output => { outputs.push(elem); }
+                        spirv::StorageClass::Input => {
+                            inputs.push(elem);
+                        }
+                        spirv::StorageClass::Output => {
+                            outputs.push(elem);
+                        }
                         _ => {}
                     }
                 }
@@ -431,12 +440,17 @@ impl SpirvModule {
 
     // TODO: use globals and decorations
     #[allow(unused_variables)]
-    fn get_iosgn(&self, entrypoint: &spv_dr::Instruction, globals: &[spv_dr::Instruction], decorations: &[spv_dr::Instruction]) -> (dr::IOsgnChunk, dr::IOsgnChunk) {
+    fn get_iosgn(
+        &self,
+        entrypoint: &spv_dr::Instruction,
+        globals: &[spv_dr::Instruction],
+        decorations: &[spv_dr::Instruction],
+    ) -> (dr::IOsgnChunk, dr::IOsgnChunk) {
         let mut isgn = dr::IOsgnChunk {
-            elements: Vec::new()
+            elements: Vec::new(),
         };
         let mut osgn = dr::IOsgnChunk {
-            elements: Vec::new()
+            elements: Vec::new(),
         };
 
         // go through all inputs/outputs of the entrypoint and append to our
@@ -446,11 +460,7 @@ impl SpirvModule {
             #[allow(clippy::single_match)]
             match operand {
                 &spv_dr::Operand::IdRef(id) => {
-                    self.add_io_element(
-                        &mut isgn.elements,
-                        &mut osgn.elements,
-                        id
-                    );
+                    self.add_io_element(&mut isgn.elements, &mut osgn.elements, id);
                 }
                 _ => {}
             }
@@ -462,13 +472,18 @@ impl SpirvModule {
     // TODO: make use of target version
     #[allow(unused_variables)]
     pub fn translate_entrypoint(&self, entrypoint: &str, target: TargetVersion) -> Vec<u32> {
-        let entrypoint = self.module.entry_points.iter().find(|e| {
-            if let spv_dr::Operand::LiteralString(ref name) = e.operands[2] {
-                entrypoint == name
-            } else {
-                false
-            }
-        }).unwrap();
+        let entrypoint = self
+            .module
+            .entry_points
+            .iter()
+            .find(|e| {
+                if let spv_dr::Operand::LiteralString(ref name) = e.operands[2] {
+                    entrypoint == name
+                } else {
+                    false
+                }
+            })
+            .unwrap();
 
         let function = self.find_function(&entrypoint.operands[1]).unwrap();
 
@@ -487,7 +502,11 @@ impl SpirvModule {
             rd11: Some([0u32; 7]),
         });
 
-        let (isgn, osgn) = self.get_iosgn(entrypoint, &self.module.types_global_values, &self.module.annotations);
+        let (isgn, osgn) = self.get_iosgn(
+            entrypoint,
+            &self.module.types_global_values,
+            &self.module.annotations,
+        );
 
         builder.set_isgn(isgn);
         builder.set_osgn(osgn);
@@ -497,10 +516,8 @@ impl SpirvModule {
             flags: dr::GlobalFlags::REFACTORING_ALLOWED,
         });
 
-
         builder.set_shex(shex);
 
         builder.module().unwrap().dwords
     }
 }
-

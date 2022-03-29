@@ -1,5 +1,5 @@
-use super::error;
 use super::decoder;
+use super::error;
 use crate::dr;
 
 use std::mem;
@@ -29,13 +29,27 @@ pub trait Consumer {
     fn initialize(&mut self) -> Action;
     fn finalize(&mut self) -> Action;
 
-    fn consume_header(&mut self, header: &dr::DxbcHeader) -> Action { Action::Continue }
-    fn consume_rdef(&mut self, rdef: &dr::RdefChunk) -> Action { Action::Continue }
-    fn consume_isgn(&mut self, isgn: &dr::IOsgnChunk) -> Action { Action::Continue }
-    fn consume_osgn(&mut self, osgn: &dr::IOsgnChunk) -> Action { Action::Continue }
-    fn consume_shex(&mut self, shex: &dr::ShexHeader) -> Action { Action::Continue }
-    fn consume_stat(&mut self, stat: &dr::IStatChunk) -> Action { Action::Continue }
-    fn consume_instruction(&mut self, offset: u32, instruction: dr::SparseInstruction) -> Action { Action::Continue }
+    fn consume_header(&mut self, header: &dr::DxbcHeader) -> Action {
+        Action::Continue
+    }
+    fn consume_rdef(&mut self, rdef: &dr::RdefChunk) -> Action {
+        Action::Continue
+    }
+    fn consume_isgn(&mut self, isgn: &dr::IOsgnChunk) -> Action {
+        Action::Continue
+    }
+    fn consume_osgn(&mut self, osgn: &dr::IOsgnChunk) -> Action {
+        Action::Continue
+    }
+    fn consume_shex(&mut self, shex: &dr::ShexHeader) -> Action {
+        Action::Continue
+    }
+    fn consume_stat(&mut self, stat: &dr::IStatChunk) -> Action {
+        Action::Continue
+    }
+    fn consume_instruction(&mut self, offset: u32, instruction: dr::SparseInstruction) -> Action {
+        Action::Continue
+    }
 }
 
 fn try_consume(action: Action) -> Result<(), State> {
@@ -78,15 +92,15 @@ impl<'c, 'd> Parser<'c, 'd> {
                 b"RDEF" => {
                     let rdef = dr::RdefChunk::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_rdef(&rdef))?;
-                },
+                }
                 b"ISGN" => {
                     let isgn = dr::IOsgnChunk::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_isgn(&isgn))?;
-                },
+                }
                 b"OSGN" => {
                     let osgn = dr::IOsgnChunk::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_osgn(&osgn))?;
-                },
+                }
                 b"SHEX" => {
                     let shex = dr::ShexHeader::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_shex(&shex))?;
@@ -97,9 +111,12 @@ impl<'c, 'd> Parser<'c, 'd> {
                         let offset = decoder.get_offset();
                         let instruction = dr::SparseInstruction::parse(&mut decoder);
 
-                        try_consume(self.consumer.consume_instruction(offset as u32, instruction))?;
+                        try_consume(
+                            self.consumer
+                                .consume_instruction(offset as u32, instruction),
+                        )?;
                     }
-                },
+                }
                 b"STAT" => {
                     let stat = dr::IStatChunk::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_stat(&stat))?;
@@ -108,9 +125,7 @@ impl<'c, 'd> Parser<'c, 'd> {
                     eprintln!(
                         "{}: Incorrect or unimplemented chunk type '{}'",
                         chunk_offset,
-                        unsafe {
-                            str::from_utf8_unchecked(fourcc)
-                        },
+                        unsafe { str::from_utf8_unchecked(fourcc) },
                     );
                 }
             }
@@ -126,9 +141,7 @@ impl<'c, 'd> Parser<'c, 'd> {
 
         // mcarton says raw pointer casts have additional sanity checking
         // compared to transmute: https://github.com/rust-lang/rust-clippy/issues/864#issuecomment-211926815
-        let header: &'d dr::DxbcHeader = unsafe {
-            &*(bytes.as_ptr() as *const dr::DxbcHeader)
-        };
+        let header: &'d dr::DxbcHeader = unsafe { &*(bytes.as_ptr() as *const dr::DxbcHeader) };
 
         if header.magic == *b"DXBC" {
             Ok(header)

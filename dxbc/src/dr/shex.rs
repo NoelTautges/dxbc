@@ -1,7 +1,7 @@
 use crate::binary::*;
 
-use std::mem;
 use std::marker::PhantomData;
+use std::mem;
 use winapi::um::d3d11tokenizedprogramformat::*;
 
 #[repr(u32)]
@@ -16,7 +16,7 @@ pub enum ConstantBufferIndexPattern {
 pub enum OperandType {
     Temp = 0,
     Input = 1,
-    Output= 2,
+    Output = 2,
     IndexableTemp = 3,
     Immediate32 = 4,
     Immediate64 = 5,
@@ -82,13 +82,18 @@ impl ComponentName {
             1 => ComponentName::Y,
             2 => ComponentName::Z,
             3 => ComponentName::W,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 #[derive(Debug)]
-pub struct ComponentSwizzle(pub ComponentName, pub ComponentName, pub ComponentName, pub ComponentName);
+pub struct ComponentSwizzle(
+    pub ComponentName,
+    pub ComponentName,
+    pub ComponentName,
+    pub ComponentName,
+);
 
 #[repr(u32)]
 #[derive(Debug)]
@@ -299,15 +304,21 @@ impl<'a> OpcodeToken0<'a> {
     }
 
     pub fn get_resource_dimension(&self) -> ResourceDimension {
-        ResourceDimension::from_word(DECODE_D3D10_SB_RESOURCE_DIMENSION(unsafe { *(self.word.offset(0)) }))
+        ResourceDimension::from_word(DECODE_D3D10_SB_RESOURCE_DIMENSION(unsafe {
+            *(self.word.offset(0))
+        }))
     }
 
     pub fn get_sampler_mode(&self) -> SamplerMode {
-        SamplerMode::from_word(DECODE_D3D10_SB_SAMPLER_MODE(unsafe { *(self.word.offset(0)) }))
+        SamplerMode::from_word(DECODE_D3D10_SB_SAMPLER_MODE(unsafe {
+            *(self.word.offset(0))
+        }))
     }
 
     pub fn get_interpolation_mode(&self) -> InterpolationMode {
-        InterpolationMode::from_word(DECODE_D3D10_SB_INPUT_INTERPOLATION_MODE(unsafe { *self.word }))
+        InterpolationMode::from_word(DECODE_D3D10_SB_INPUT_INTERPOLATION_MODE(unsafe {
+            *self.word
+        }))
     }
 }
 
@@ -360,7 +371,7 @@ pub enum ResourceDimension {
     Texture2DMSArray = 9,
     TextureCubeArray = 10,
     RawBuffer = 11,
-    StructuredBuffer = 12
+    StructuredBuffer = 12,
 }
 
 impl ResourceDimension {
@@ -379,7 +390,7 @@ impl ResourceDimension {
             10 => ResourceDimension::TextureCubeArray,
             11 => ResourceDimension::RawBuffer,
             12 => ResourceDimension::StructuredBuffer,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -452,7 +463,10 @@ impl<'a> ResourceReturnTypeToken0<'a> {
     }
 
     pub fn get_return_type(&self, name: ComponentName) -> ResourceReturnType {
-        ResourceReturnType::from_word(DECODE_D3D10_SB_RESOURCE_RETURN_TYPE(unsafe { *(self.word.offset(0)) }, name as u32))
+        ResourceReturnType::from_word(DECODE_D3D10_SB_RESOURCE_RETURN_TYPE(
+            unsafe { *(self.word.offset(0)) },
+            name as u32,
+        ))
     }
 }
 
@@ -472,13 +486,14 @@ impl<'a> OpcodeToken1<'a> {
     }
 
     pub fn get_extended_opcode_type(&self) -> ExtendedOpcodeType {
-        ExtendedOpcodeType::from_word(DECODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(unsafe { *self.word }))
+        ExtendedOpcodeType::from_word(DECODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(unsafe {
+            *self.word
+        }))
     }
 
     pub fn get_opcode_modifier(&self) -> u32 {
         DECODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(unsafe { *self.word })
     }
-
 
     pub fn is_extended(&self) -> bool {
         DECODE_IS_D3D10_SB_OPCODE_EXTENDED(unsafe { *self.word }) != 0
@@ -553,8 +568,10 @@ impl<'a> OperandToken0<'a> {
                 let ty = operand.get_operand_type();
 
                 match ty {
-                    OperandType::Immediate32 | OperandType::Immediate64 => operand.get_num_components_u32(),
-                    _ => 0
+                    OperandType::Immediate32 | OperandType::Immediate64 => {
+                        operand.get_num_components_u32()
+                    }
+                    _ => 0,
                 }
             }
             IndexDimension::D1 => 1,
@@ -562,28 +579,27 @@ impl<'a> OperandToken0<'a> {
             IndexDimension::D3 => 3,
         };
 
-
         for i in 0..len {
             let repr = operand.get_index_representation(i);
 
             match repr {
                 IndexRepresentation::Immediate32 => {
                     decoder.skip(4);
-                },
+                }
                 IndexRepresentation::Immediate64 => {
                     decoder.skip(8);
-                },
+                }
                 IndexRepresentation::Relative => {
                     let _ = OperandToken0::parse(decoder);
                 }
                 IndexRepresentation::Immediate32PlusRelative => {
                     decoder.skip(4);
                     let _ = OperandToken0::parse(decoder);
-                },
+                }
                 IndexRepresentation::Immediate64PlusRelative => {
                     decoder.skip(8);
                     let _ = OperandToken0::parse(decoder);
-                },
+                }
             }
         }
 
@@ -601,8 +617,10 @@ impl<'a> OperandToken0<'a> {
                 let ty = self.get_operand_type();
 
                 match ty {
-                    OperandType::Immediate32 | OperandType::Immediate64 => self.get_num_components_u32(),
-                    _ => 0
+                    OperandType::Immediate32 | OperandType::Immediate64 => {
+                        self.get_num_components_u32()
+                    }
+                    _ => 0,
                 }
             }
             IndexDimension::D1 => 1,
@@ -610,28 +628,30 @@ impl<'a> OperandToken0<'a> {
             IndexDimension::D3 => 3,
         };
 
-
         for i in 0..dim_len {
             let repr = self.get_index_representation(i);
 
             match repr {
                 IndexRepresentation::Immediate32 => {
                     len += 1;
-                },
+                }
                 IndexRepresentation::Immediate64 => {
                     len += 2;
-                },
+                }
                 IndexRepresentation::Relative => {
-                    len += OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
+                    len +=
+                        OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
                 }
                 IndexRepresentation::Immediate32PlusRelative => {
                     len += 1;
-                    len += OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
-                },
+                    len +=
+                        OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
+                }
                 IndexRepresentation::Immediate64PlusRelative => {
                     len += 2;
-                    len += OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
-                },
+                    len +=
+                        OperandToken0::from_word(unsafe { self.word.offset(len as isize) }).len();
+                }
             }
         }
 
@@ -669,10 +689,12 @@ impl<'a> OperandToken0<'a> {
                 let ty = self.get_operand_type();
 
                 match ty {
-                    OperandType::Immediate32 | OperandType::Immediate64 => self.get_num_components_u32(),
-                    _ => 0
+                    OperandType::Immediate32 | OperandType::Immediate64 => {
+                        self.get_num_components_u32()
+                    }
+                    _ => 0,
                 }
-            },
+            }
             IndexDimension::D1 => 1,
             IndexDimension::D2 => 2,
             IndexDimension::D3 => 3,
@@ -691,10 +713,12 @@ impl<'a> OperandToken0<'a> {
                 let ty = self.get_operand_type();
 
                 match ty {
-                    OperandType::Immediate32 | OperandType::Immediate64 => self.get_num_components_u32(),
-                    _ => 0
+                    OperandType::Immediate32 | OperandType::Immediate64 => {
+                        self.get_num_components_u32()
+                    }
+                    _ => 0,
                 }
-            },
+            }
             IndexDimension::D1 => 1,
             IndexDimension::D2 => 2,
             IndexDimension::D3 => 3,
@@ -711,52 +735,53 @@ impl<'a> OperandToken0<'a> {
             if i == index {
                 match repr {
                     Immediate32 => {
-                        return Immediate::U32(
-                            unsafe { *imm.offset(offset as isize) }
-                        );
-                    },
+                        return Immediate::U32(unsafe { *imm.offset(offset as isize) });
+                    }
                     Immediate64 => {
-                        return Immediate::U64(
-                            unsafe { *(imm.offset(offset as isize) as *const u64) }
-                        );
-                    },
+                        return Immediate::U64(unsafe {
+                            *(imm.offset(offset as isize) as *const u64)
+                        });
+                    }
                     Relative => {
-                        return Immediate::Relative(
-                            OperandToken0::from_word(unsafe { imm.offset(offset as isize) })
-                        );
-                    },
+                        return Immediate::Relative(OperandToken0::from_word(unsafe {
+                            imm.offset(offset as isize)
+                        }));
+                    }
                     Immediate32PlusRelative => {
                         return Immediate::U32Relative(
                             unsafe { *imm.offset(offset as isize) },
-                            OperandToken0::from_word(unsafe { imm.offset(1 + offset as isize) })
+                            OperandToken0::from_word(unsafe { imm.offset(1 + offset as isize) }),
                         );
-                    },
+                    }
                     Immediate64PlusRelative => {
                         return Immediate::U64Relative(
                             unsafe { *(imm.offset(offset as isize) as *const u64) },
-                            OperandToken0::from_word(unsafe { imm.offset(2 + offset as isize) })
+                            OperandToken0::from_word(unsafe { imm.offset(2 + offset as isize) }),
                         );
-                    },
+                    }
                 }
             } else {
                 match repr {
                     Immediate32 => {
                         offset += 1;
-                    },
+                    }
                     Immediate64 => {
                         offset += 2;
-                    },
+                    }
                     Relative => {
-                        offset += OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
-                    },
+                        offset +=
+                            OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
+                    }
                     Immediate32PlusRelative => {
                         offset += 1;
-                        offset += OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
-                    },
+                        offset +=
+                            OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
+                    }
                     Immediate64PlusRelative => {
                         offset += 2;
-                        offset += OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
-                    },
+                        offset +=
+                            OperandToken0::from_word(unsafe { imm.offset(offset as isize) }).len();
+                    }
                 }
             }
         }
@@ -774,7 +799,7 @@ impl<'a> OperandToken0<'a> {
             1 => NumComponents::One,
             2 => NumComponents::Four,
             3 => NumComponents::N,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -783,7 +808,7 @@ impl<'a> OperandToken0<'a> {
             0 => 0,
             1 => 1,
             2 => 4,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -792,19 +817,33 @@ impl<'a> OperandToken0<'a> {
             0 => ComponentSelectMode::Mask,
             1 => ComponentSelectMode::Swizzle,
             2 => ComponentSelectMode::Select1,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
     pub fn get_component_mask(&self) -> ComponentMask {
-        ComponentMask::from_bits_truncate(DECODE_D3D10_SB_OPERAND_4_COMPONENT_MASK(unsafe { *self.word }))
+        ComponentMask::from_bits_truncate(DECODE_D3D10_SB_OPERAND_4_COMPONENT_MASK(unsafe {
+            *self.word
+        }))
     }
 
     pub fn get_component_swizzle(&self) -> ComponentSwizzle {
-        let x = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(unsafe { *self.word }, D3D10_SB_4_COMPONENT_X) as u8;
-        let y = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(unsafe { *self.word }, D3D10_SB_4_COMPONENT_Y) as u8;
-        let z = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(unsafe { *self.word }, D3D10_SB_4_COMPONENT_Z) as u8;
-        let w = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(unsafe { *self.word }, D3D10_SB_4_COMPONENT_W) as u8;
+        let x = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(
+            unsafe { *self.word },
+            D3D10_SB_4_COMPONENT_X,
+        ) as u8;
+        let y = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(
+            unsafe { *self.word },
+            D3D10_SB_4_COMPONENT_Y,
+        ) as u8;
+        let z = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(
+            unsafe { *self.word },
+            D3D10_SB_4_COMPONENT_Z,
+        ) as u8;
+        let w = DECODE_D3D10_SB_OPERAND_4_COMPONENT_SWIZZLE_SOURCE(
+            unsafe { *self.word },
+            D3D10_SB_4_COMPONENT_W,
+        ) as u8;
 
         ComponentSwizzle(
             ComponentName::from_word(x),
@@ -949,7 +988,7 @@ impl<'a> DclInput<'a> {
     pub fn get_input_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -963,7 +1002,7 @@ impl<'a> DclInputPs<'a> {
     pub fn get_input_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -977,7 +1016,7 @@ impl<'a> DclOutput<'a> {
     pub fn get_output_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -993,21 +1032,21 @@ impl<'a> DclConstantBuffer<'a> {
         match self.access {
             0 => ConstantBufferIndexPattern::Immediate,
             1 => ConstantBufferIndexPattern::Dynamic,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
     pub fn get_binding(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 
     pub fn get_size(&self) -> u32 {
         match self.operand.get_immediate(1) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -1022,7 +1061,7 @@ impl<'a> DclResource<'a> {
     pub fn get_register(&self) -> u32 {
         match self.register.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -1036,7 +1075,7 @@ impl<'a> DclSampler<'a> {
     pub fn get_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 }
@@ -1051,7 +1090,7 @@ impl<'a> DclOutputSiv<'a> {
     pub fn get_output_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 
@@ -1070,7 +1109,7 @@ impl<'a> DclOutputSgv<'a> {
     pub fn get_output_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 
@@ -1078,8 +1117,6 @@ impl<'a> DclOutputSgv<'a> {
         NameToken::from_word(DECODE_D3D10_SB_NAME(unsafe { *self.operand_2.word }))
     }
 }
-
-
 
 #[derive(Debug)]
 pub struct DclInputPsSiv<'a> {
@@ -1091,7 +1128,7 @@ impl<'a> DclInputPsSiv<'a> {
     pub fn get_input_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 
@@ -1110,7 +1147,7 @@ impl<'a> DclInputPsSgv<'a> {
     pub fn get_input_register(&self) -> u32 {
         match self.operand.get_immediate(0) {
             Immediate::U32(reg) => reg,
-            _ => !0
+            _ => !0,
         }
     }
 
@@ -1239,7 +1276,7 @@ impl ShexHeader {
             minor,
             major,
             program_type,
-            instruction_length
+            instruction_length,
         })
     }
 }
@@ -1283,7 +1320,7 @@ pub enum Operands<'a> {
     Sample(Sample<'a>),
     SampleL(SampleL<'a>),
     Ret,
-    Unknown
+    Unknown,
 }
 
 impl<'a> SparseInstruction<'a> {
@@ -1301,189 +1338,124 @@ impl<'a> SparseInstruction<'a> {
         }
 
         let operands = match ty {
-            D3D10_SB_OPCODE_DCL_GLOBAL_FLAGS => {
-                Operands::DclGlobalFlags(DclGlobalFlags {
-                    global_flags: DECODE_D3D10_SB_GLOBAL_FLAGS(unsafe { *opcode.word }),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_INPUT => {
-                Operands::DclInput(DclInput {
-                    operand: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_INPUT_PS => {
-                Operands::DclInputPs(DclInputPs {
-                    operand: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_INPUT_PS_SIV => {
-                Operands::DclInputPsSiv(DclInputPsSiv {
-                    operand: OperandToken0::parse(decoder),
-                    operand_2: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_INPUT_PS_SGV => {
-                Operands::DclInputPsSgv(DclInputPsSgv {
-                    operand: OperandToken0::parse(decoder),
-                    operand_2: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_OUTPUT => {
-                Operands::DclOutput(DclOutput {
-                    operand: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_CONSTANT_BUFFER => {
-                Operands::DclConstantBuffer(DclConstantBuffer {
-                    operand: OperandToken0::parse(decoder),
-                    access: DECODE_D3D10_SB_CONSTANT_BUFFER_ACCESS_PATTERN(unsafe { *opcode.word }),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_RESOURCE => {
-                Operands::DclResource(DclResource {
-                    register: OperandToken0::parse(decoder),
-                    return_type: ResourceReturnTypeToken0::from_word(decoder.read_u32_address()),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_SAMPLER => {
-                Operands::DclSampler(DclSampler {
-                    operand: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_TEMPS => {
-                Operands::DclTemps(DclTemps {
-                    register_count: decoder.read_u32(),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_INDEXABLE_TEMP => {
-                Operands::DclIndexableTemp(DclIndexableTemp {
-                    register_index: decoder.read_u32(),
-                    register_count: decoder.read_u32(),
-                    num_components: decoder.read_u32(),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_OUTPUT_SIV => {
-                Operands::DclOutputSiv(DclOutputSiv {
-                    operand: OperandToken0::parse(decoder),
-                    operand_2: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_DCL_OUTPUT_SGV => {
-                Operands::DclOutputSgv(DclOutputSgv {
-                    operand: OperandToken0::parse(decoder),
-                    operand_2: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_ADD => {
-                Operands::Add(Add {
-                    dst: OperandToken0::parse(decoder),
-                    a: OperandToken0::parse(decoder),
-                    b: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_AND => {
-                Operands::And(And {
-                    dst: OperandToken0::parse(decoder),
-                    a: OperandToken0::parse(decoder),
-                    b: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_MUL => {
-                Operands::Mul(Mul {
-                    dst: OperandToken0::parse(decoder),
-                    a: OperandToken0::parse(decoder),
-                    b: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_MAD => {
-                Operands::Mad(Mad {
-                    dst: OperandToken0::parse(decoder),
-                    a: OperandToken0::parse(decoder),
-                    b: OperandToken0::parse(decoder),
-                    c: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_MOV => {
-                Operands::Mov(Mov {
-                    dst: OperandToken0::parse(decoder),
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_ITOF => {
-                Operands::Itof(Itof {
-                    dst: OperandToken0::parse(decoder),
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_UTOF => {
-                Operands::Utof(Utof {
-                    dst: OperandToken0::parse(decoder),
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_FTOU => {
-                Operands::Ftou(Ftou {
-                    dst: OperandToken0::parse(decoder),
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_IF => {
-                Operands::If(If {
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_ELSE => {
-                Operands::Else
-            }
-            D3D10_SB_OPCODE_ENDIF => {
-                Operands::EndIf
-            }
-            D3D10_SB_OPCODE_LOOP => {
-                Operands::Loop
-            }
-            D3D10_SB_OPCODE_ENDLOOP => {
-                Operands::EndLoop
-            }
-            D3D10_SB_OPCODE_BREAK => {
-                Operands::Break
-            }
-            D3D10_SB_OPCODE_BREAKC => {
-                Operands::BreakC(BreakC {
-                    src: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_SAMPLE => {
-                Operands::Sample(Sample {
-                    dst: OperandToken0::parse(decoder),
-                    src_address: OperandToken0::parse(decoder),
-                    src_resource: OperandToken0::parse(decoder),
-                    src_sampler: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_SAMPLE_L => {
-                Operands::SampleL(SampleL {
-                    dst: OperandToken0::parse(decoder),
-                    src_address: OperandToken0::parse(decoder),
-                    src_resource: OperandToken0::parse(decoder),
-                    src_sampler: OperandToken0::parse(decoder),
-                    src_lod: OperandToken0::parse(decoder),
-                })
-            }
-            D3D10_SB_OPCODE_RET => {
-                Operands::Ret
-            }
+            D3D10_SB_OPCODE_DCL_GLOBAL_FLAGS => Operands::DclGlobalFlags(DclGlobalFlags {
+                global_flags: DECODE_D3D10_SB_GLOBAL_FLAGS(unsafe { *opcode.word }),
+            }),
+            D3D10_SB_OPCODE_DCL_INPUT => Operands::DclInput(DclInput {
+                operand: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_INPUT_PS => Operands::DclInputPs(DclInputPs {
+                operand: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_INPUT_PS_SIV => Operands::DclInputPsSiv(DclInputPsSiv {
+                operand: OperandToken0::parse(decoder),
+                operand_2: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_INPUT_PS_SGV => Operands::DclInputPsSgv(DclInputPsSgv {
+                operand: OperandToken0::parse(decoder),
+                operand_2: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_OUTPUT => Operands::DclOutput(DclOutput {
+                operand: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_CONSTANT_BUFFER => Operands::DclConstantBuffer(DclConstantBuffer {
+                operand: OperandToken0::parse(decoder),
+                access: DECODE_D3D10_SB_CONSTANT_BUFFER_ACCESS_PATTERN(unsafe { *opcode.word }),
+            }),
+            D3D10_SB_OPCODE_DCL_RESOURCE => Operands::DclResource(DclResource {
+                register: OperandToken0::parse(decoder),
+                return_type: ResourceReturnTypeToken0::from_word(decoder.read_u32_address()),
+            }),
+            D3D10_SB_OPCODE_DCL_SAMPLER => Operands::DclSampler(DclSampler {
+                operand: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_TEMPS => Operands::DclTemps(DclTemps {
+                register_count: decoder.read_u32(),
+            }),
+            D3D10_SB_OPCODE_DCL_INDEXABLE_TEMP => Operands::DclIndexableTemp(DclIndexableTemp {
+                register_index: decoder.read_u32(),
+                register_count: decoder.read_u32(),
+                num_components: decoder.read_u32(),
+            }),
+            D3D10_SB_OPCODE_DCL_OUTPUT_SIV => Operands::DclOutputSiv(DclOutputSiv {
+                operand: OperandToken0::parse(decoder),
+                operand_2: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DCL_OUTPUT_SGV => Operands::DclOutputSgv(DclOutputSgv {
+                operand: OperandToken0::parse(decoder),
+                operand_2: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ADD => Operands::Add(Add {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_AND => Operands::And(And {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_MUL => Operands::Mul(Mul {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_MAD => Operands::Mad(Mad {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+                c: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_MOV => Operands::Mov(Mov {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ITOF => Operands::Itof(Itof {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_UTOF => Operands::Utof(Utof {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_FTOU => Operands::Ftou(Ftou {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_IF => Operands::If(If {
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ELSE => Operands::Else,
+            D3D10_SB_OPCODE_ENDIF => Operands::EndIf,
+            D3D10_SB_OPCODE_LOOP => Operands::Loop,
+            D3D10_SB_OPCODE_ENDLOOP => Operands::EndLoop,
+            D3D10_SB_OPCODE_BREAK => Operands::Break,
+            D3D10_SB_OPCODE_BREAKC => Operands::BreakC(BreakC {
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_SAMPLE => Operands::Sample(Sample {
+                dst: OperandToken0::parse(decoder),
+                src_address: OperandToken0::parse(decoder),
+                src_resource: OperandToken0::parse(decoder),
+                src_sampler: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_SAMPLE_L => Operands::SampleL(SampleL {
+                dst: OperandToken0::parse(decoder),
+                src_address: OperandToken0::parse(decoder),
+                src_resource: OperandToken0::parse(decoder),
+                src_sampler: OperandToken0::parse(decoder),
+                src_lod: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_RET => Operands::Ret,
             _ => {
                 if len > 1 {
-                    decoder.skip(4 * (len as usize  - 1));
+                    decoder.skip(4 * (len as usize - 1));
                 }
 
                 Operands::Unknown
             }
         };
 
-        SparseInstruction {
-            opcode,
-            operands,
-        }
+        SparseInstruction { opcode, operands }
     }
 }

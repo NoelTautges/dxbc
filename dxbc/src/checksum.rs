@@ -52,4 +52,3 @@ pub fn checksum(module: &[u8]) -> [u32; 4] {
 
     ctx.state
 }
-

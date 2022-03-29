@@ -1,6 +1,6 @@
-use std::{error, fmt};
-use std::string::FromUtf8Error;
 use std::str::Utf8Error;
+use std::string::FromUtf8Error;
+use std::{error, fmt};
 
 #[derive(Debug)]
 pub enum Error {
@@ -13,8 +13,10 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::DecodeStringFailed(index, ref e) => write!(f, "cannot decode string at index {}: {}", index, e),
-            _ => write!(f, "unimplemented")
+            Error::DecodeStringFailed(index, ref e) => {
+                write!(f, "cannot decode string at index {}: {}", index, e)
+            }
+            _ => write!(f, "unimplemented"),
         }
     }
 }

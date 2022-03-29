@@ -1,9 +1,9 @@
 extern crate dxbc;
 extern crate term;
 
-use dxbc::dr::*;
-use dxbc::dr::shex::*;
 use dxbc::binary::*;
+use dxbc::dr::shex::*;
+use dxbc::dr::*;
 
 struct DisasmConsumer {
     out: Box<term::StdoutTerminal>,
@@ -27,7 +27,7 @@ fn get_name_token_name(mode: NameToken) -> &'static str {
         NameToken::InstanceId => "instance_id",
         NameToken::IsFrontFace => "is_front_face",
         NameToken::SampleIndex => "sampleIndex",
-        _ => "TODO"
+        _ => "TODO",
     }
 }
 
@@ -93,13 +93,36 @@ impl DisasmConsumer {
         self.end_instruction();
     }
 
-    fn write_resource_return_type<'a>(&mut self, _opcode: OpcodeToken0<'a>, return_type: ResourceReturnTypeToken0<'a>) {
-
+    fn write_resource_return_type<'a>(
+        &mut self,
+        _opcode: OpcodeToken0<'a>,
+        return_type: ResourceReturnTypeToken0<'a>,
+    ) {
         write!(self.out, "(").unwrap();
-        write!(self.out, "{:?}, ", return_type.get_return_type(ComponentName::X)).unwrap();
-        write!(self.out, "{:?}, ", return_type.get_return_type(ComponentName::Y)).unwrap();
-        write!(self.out, "{:?}, ", return_type.get_return_type(ComponentName::Z)).unwrap();
-        write!(self.out, "{:?}", return_type.get_return_type(ComponentName::W)).unwrap();
+        write!(
+            self.out,
+            "{:?}, ",
+            return_type.get_return_type(ComponentName::X)
+        )
+        .unwrap();
+        write!(
+            self.out,
+            "{:?}, ",
+            return_type.get_return_type(ComponentName::Y)
+        )
+        .unwrap();
+        write!(
+            self.out,
+            "{:?}, ",
+            return_type.get_return_type(ComponentName::Z)
+        )
+        .unwrap();
+        write!(
+            self.out,
+            "{:?}",
+            return_type.get_return_type(ComponentName::W)
+        )
+        .unwrap();
         write!(self.out, ")").unwrap();
     }
 
@@ -120,19 +143,23 @@ impl DisasmConsumer {
 
     fn write_immediate(&mut self, imm: Immediate) {
         match imm {
-            Immediate::U32(val) => { write!(self.out, "{}", val).unwrap(); },
-            Immediate::U64(val) => { write!(self.out, "{}", val).unwrap(); },
+            Immediate::U32(val) => {
+                write!(self.out, "{}", val).unwrap();
+            }
+            Immediate::U64(val) => {
+                write!(self.out, "{}", val).unwrap();
+            }
             Immediate::Relative(operand) => {
                 self.write_operand(&operand);
-            },
+            }
             Immediate::U32Relative(val, operand) => {
                 write!(self.out, "{} + ", val).unwrap();
                 self.write_operand(&operand);
-            },
+            }
             Immediate::U64Relative(val, operand) => {
                 write!(self.out, "{} + ", val).unwrap();
                 self.write_operand(&operand);
-            },
+            }
         }
     }
 
@@ -167,7 +194,7 @@ impl DisasmConsumer {
                     match imm {
                         Immediate::U32(val) => {
                             literals.push(format!("{:.6}", f32::from_bits(val)));
-                        },
+                        }
                         Immediate::U64(val) => {
                             literals.push(format!("{:.6}", f64::from_bits(val)));
                         }
@@ -179,23 +206,21 @@ impl DisasmConsumer {
 
                 write!(self.out, ")").unwrap();
             }
-            _ => {
-
-            }
+            _ => {}
         }
 
         if let Some(operand) = operand.get_extended_operand() {
             match operand.get_operand_modifier() {
-                OperandModifier::None => {},
+                OperandModifier::None => {}
                 OperandModifier::Neg => {
                     write!(self.out, "-").unwrap();
-                },
+                }
                 OperandModifier::Abs => {
                     write!(self.out, "|").unwrap();
-                },
+                }
                 OperandModifier::AbsNeg => {
                     write!(self.out, "-|").unwrap();
-                },
+                }
             }
         }
 
@@ -207,8 +232,10 @@ impl DisasmConsumer {
             OperandType::Sampler => "s",
             OperandType::ConstantBuffer => "cb",
 
-            OperandType::Immediate32 | OperandType::Immediate64 => { return; }
-            _ => ""
+            OperandType::Immediate32 | OperandType::Immediate64 => {
+                return;
+            }
+            _ => "",
         };
 
         write!(self.out, "{}", prefix).unwrap();
@@ -218,13 +245,13 @@ impl DisasmConsumer {
         match dim {
             IndexDimension::D1 => {
                 self.write_immediate(operand.get_immediate(0));
-            },
+            }
             IndexDimension::D2 => {
                 self.write_immediate(operand.get_immediate(0));
                 write!(self.out, "[").unwrap();
                 self.write_immediate(operand.get_immediate(1));
                 write!(self.out, "]").unwrap();
-            },
+            }
             _ => {}
         }
         /*match immediate {
@@ -313,11 +340,11 @@ impl DisasmConsumer {
 
         if let Some(operand) = operand.get_extended_operand() {
             match operand.get_operand_modifier() {
-                OperandModifier::None => {},
-                OperandModifier::Neg => {},
+                OperandModifier::None => {}
+                OperandModifier::Neg => {}
                 OperandModifier::Abs | OperandModifier::AbsNeg => {
                     write!(self.out, "|").unwrap();
-                },
+                }
             }
         }
     }
@@ -380,8 +407,16 @@ impl Consumer for DisasmConsumer {
         writeln!(self.out, "//").unwrap();
         writeln!(self.out, "// Input signature:").unwrap();
         writeln!(self.out, "//").unwrap();
-        writeln!(self.out, "// Name                 Index   Mask Register SysValue  Format   Used").unwrap();
-        writeln!(self.out, "// -------------------- ----- ------ -------- -------- ------- ------").unwrap();
+        writeln!(
+            self.out,
+            "// Name                 Index   Mask Register SysValue  Format   Used"
+        )
+        .unwrap();
+        writeln!(
+            self.out,
+            "// -------------------- ----- ------ -------- -------- ------- ------"
+        )
+        .unwrap();
 
         for elem in &isgn.elements {
             writeln!(
@@ -399,7 +434,8 @@ impl Consumer for DisasmConsumer {
                     RegisterComponentType::Float32 => "float",
                 },
                 elem.rw_mask,
-            ).unwrap();
+            )
+            .unwrap();
         }
         writeln!(self.out, "//").unwrap();
         writeln!(self.out, "//").unwrap();
@@ -415,8 +451,16 @@ impl Consumer for DisasmConsumer {
         writeln!(self.out, "//").unwrap();
         writeln!(self.out, "// Output signature:").unwrap();
         writeln!(self.out, "//").unwrap();
-        writeln!(self.out, "// Name                 Index   Mask Register SysValue  Format   Used").unwrap();
-        writeln!(self.out, "// -------------------- ----- ------ -------- -------- ------- ------").unwrap();
+        writeln!(
+            self.out,
+            "// Name                 Index   Mask Register SysValue  Format   Used"
+        )
+        .unwrap();
+        writeln!(
+            self.out,
+            "// -------------------- ----- ------ -------- -------- ------- ------"
+        )
+        .unwrap();
 
         for elem in &osgn.elements {
             writeln!(
@@ -434,7 +478,8 @@ impl Consumer for DisasmConsumer {
                     RegisterComponentType::Float32 => "float",
                 },
                 elem.rw_mask,
-            ).unwrap();
+            )
+            .unwrap();
         }
         writeln!(self.out, "//").unwrap();
         writeln!(self.out, "//").unwrap();
@@ -448,7 +493,11 @@ impl Consumer for DisasmConsumer {
         Action::Continue
     }
 
-    fn consume_instruction(&mut self, offset: u32, instruction: dxbc::dr::SparseInstruction) -> Action {
+    fn consume_instruction(
+        &mut self,
+        offset: u32,
+        instruction: dxbc::dr::SparseInstruction,
+    ) -> Action {
         use dxbc::dr::Operands::*;
 
         let opcode = instruction.opcode;
@@ -465,12 +514,15 @@ impl Consumer for DisasmConsumer {
             DclInput(input) => {
                 self.write_instruction(opcode, offset, "dcl_input");
                 match input.operand.get_operand_type() {
-
-                    OperandType::Input => { write!(self.out, "v{}.", input.get_input_register()).unwrap(); }
+                    OperandType::Input => {
+                        write!(self.out, "v{}.", input.get_input_register()).unwrap();
+                    }
                     OperandType::InputCoverageMask => {
                         write!(self.out, "vCoverage").unwrap();
                     }
-                    _ => { write!(self.out, "TODO").unwrap(); }
+                    _ => {
+                        write!(self.out, "TODO").unwrap();
+                    }
                 };
                 self.write_mask(input.operand.get_component_mask());
                 writeln!(self.out).unwrap();
@@ -478,50 +530,84 @@ impl Consumer for DisasmConsumer {
             DclInputPs(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps");
 
-                write!(self.out, "{} ", get_interpolation_mode_name(opcode.get_interpolation_mode())).unwrap();
+                write!(
+                    self.out,
+                    "{} ",
+                    get_interpolation_mode_name(opcode.get_interpolation_mode())
+                )
+                .unwrap();
 
                 match input.operand.get_operand_type() {
-
-                    OperandType::Input => { write!(self.out, "v{}.", input.get_input_register()).unwrap(); }
+                    OperandType::Input => {
+                        write!(self.out, "v{}.", input.get_input_register()).unwrap();
+                    }
                     OperandType::InputCoverageMask => {
                         write!(self.out, "vCoverage").unwrap();
                     }
-                    _ => { write!(self.out, "TODO").unwrap(); }
+                    _ => {
+                        write!(self.out, "TODO").unwrap();
+                    }
                 };
                 self.write_mask(input.operand.get_component_mask());
                 writeln!(self.out).unwrap();
             }
             DclInputPsSiv(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps_siv");
-                write!(self.out, "{} ", get_interpolation_mode_name(opcode.get_interpolation_mode())).unwrap();
+                write!(
+                    self.out,
+                    "{} ",
+                    get_interpolation_mode_name(opcode.get_interpolation_mode())
+                )
+                .unwrap();
                 match input.operand.get_operand_type() {
-
-                    OperandType::Input => { write!(self.out, "v{}.", input.get_input_register()).unwrap(); }
+                    OperandType::Input => {
+                        write!(self.out, "v{}.", input.get_input_register()).unwrap();
+                    }
                     OperandType::InputCoverageMask => {
                         write!(self.out, "vCoverage").unwrap();
                     }
-                    _ => { write!(self.out, "TODO").unwrap(); }
+                    _ => {
+                        write!(self.out, "TODO").unwrap();
+                    }
                 };
                 self.write_mask(input.operand.get_component_mask());
 
-                write!(self.out, " {}", get_name_token_name(input.get_system_name())).unwrap();
+                write!(
+                    self.out,
+                    " {}",
+                    get_name_token_name(input.get_system_name())
+                )
+                .unwrap();
 
                 writeln!(self.out).unwrap();
             }
             DclInputPsSgv(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps_sgv");
-                write!(self.out, "{} ", get_interpolation_mode_name(opcode.get_interpolation_mode())).unwrap();
+                write!(
+                    self.out,
+                    "{} ",
+                    get_interpolation_mode_name(opcode.get_interpolation_mode())
+                )
+                .unwrap();
                 match input.operand.get_operand_type() {
-
-                    OperandType::Input => { write!(self.out, "v{}.", input.get_input_register()).unwrap(); }
+                    OperandType::Input => {
+                        write!(self.out, "v{}.", input.get_input_register()).unwrap();
+                    }
                     OperandType::InputCoverageMask => {
                         write!(self.out, "vCoverage").unwrap();
                     }
-                    _ => { write!(self.out, "TODO").unwrap(); }
+                    _ => {
+                        write!(self.out, "TODO").unwrap();
+                    }
                 };
                 self.write_mask(input.operand.get_component_mask());
 
-                write!(self.out, " {}", get_name_token_name(input.get_system_name())).unwrap();
+                write!(
+                    self.out,
+                    " {}",
+                    get_name_token_name(input.get_system_name())
+                )
+                .unwrap();
                 writeln!(self.out).unwrap();
             }
             DclOutput(output) => {
@@ -533,18 +619,30 @@ impl Consumer for DisasmConsumer {
             DclConstantBuffer(cb) => {
                 self.write_instruction(opcode, offset, "dcl_constantbuffer");
 
-                writeln!(self.out, "CB{}[{}], {:?}", cb.get_binding(), cb.get_size(), cb.get_access_pattern()).unwrap();
+                writeln!(
+                    self.out,
+                    "CB{}[{}], {:?}",
+                    cb.get_binding(),
+                    cb.get_size(),
+                    cb.get_access_pattern()
+                )
+                .unwrap();
             }
             DclResource(resource) => {
                 self.begin_instruction(opcode, offset, "dcl_resource");
-                write!(self.out, "{}", match opcode.get_resource_dimension() {
-                    ResourceDimension::Texture1D => "_texture1d",
-                    ResourceDimension::Texture2D => "_texture2d",
-                    ResourceDimension::Texture3D => "_texture3d",
-                    ResourceDimension::TextureCube => "_texturecube",
-                    ResourceDimension::Texture2DMS => "_texture2dms",
-                    _ => "",
-                }).unwrap();
+                write!(
+                    self.out,
+                    "{}",
+                    match opcode.get_resource_dimension() {
+                        ResourceDimension::Texture1D => "_texture1d",
+                        ResourceDimension::Texture2D => "_texture2d",
+                        ResourceDimension::Texture3D => "_texture3d",
+                        ResourceDimension::TextureCube => "_texturecube",
+                        ResourceDimension::Texture2DMS => "_texture2dms",
+                        _ => "",
+                    }
+                )
+                .unwrap();
                 self.end_instruction();
 
                 // TODO: resource dim
@@ -568,26 +666,31 @@ impl Consumer for DisasmConsumer {
             DclIndexableTemp(temps) => {
                 self.write_instruction(opcode, offset, "dcl_indexableTemp");
 
-                writeln!(self.out, "X{}[{}], {}", temps.register_index, temps.register_count, temps.num_components).unwrap();
+                writeln!(
+                    self.out,
+                    "X{}[{}], {}",
+                    temps.register_index, temps.register_count, temps.num_components
+                )
+                .unwrap();
             }
             DclOutputSiv(siv) => {
                 self.write_instruction(opcode, offset, "dcl_output_siv");
                 write!(self.out, "o{}.", siv.get_output_register()).unwrap();
                 self.write_mask(siv.operand.get_component_mask());
                 writeln!(self.out, ", {:?}", siv.get_system_name()).unwrap();
-            },
+            }
             Add(add) => {
                 self.write_instruction(opcode, offset, "add");
                 self.write_operands(&[add.dst, add.a, add.b]);
-            },
+            }
             And(and) => {
                 self.write_instruction(opcode, offset, "and");
                 self.write_operands(&[and.dst, and.a, and.b]);
-            },
+            }
             Mul(mul) => {
                 self.write_instruction(opcode, offset, "mul");
                 self.write_operands(&[mul.dst, mul.a, mul.b]);
-            },
+            }
             Mad(mad) => {
                 self.write_instruction(opcode, offset, "mad");
                 self.write_operands(&[mad.dst, mad.a, mad.b, mad.c]);
@@ -610,7 +713,12 @@ impl Consumer for DisasmConsumer {
             }
             If(i) => {
                 self.begin_instruction(opcode, offset, "if");
-                write!(self.out, "_{}", get_test_boolean_name(opcode.get_test_type())).unwrap();
+                write!(
+                    self.out,
+                    "_{}",
+                    get_test_boolean_name(opcode.get_test_type())
+                )
+                .unwrap();
                 self.end_instruction();
                 self.write_operands(&[i.src]);
 
@@ -649,7 +757,12 @@ impl Consumer for DisasmConsumer {
             }
             BreakC(breakc) => {
                 self.begin_instruction(opcode, offset, "breakc");
-                write!(self.out, "_{}", get_test_boolean_name(opcode.get_test_type())).unwrap();
+                write!(
+                    self.out,
+                    "_{}",
+                    get_test_boolean_name(opcode.get_test_type())
+                )
+                .unwrap();
                 self.end_instruction();
 
                 self.write_operands(&[breakc.src]);
@@ -657,12 +770,23 @@ impl Consumer for DisasmConsumer {
             Sample(sample) => {
                 self.write_instruction(opcode, offset, "sample");
 
-                self.write_operands(&[sample.dst, sample.src_address, sample.src_resource, sample.src_sampler]);
+                self.write_operands(&[
+                    sample.dst,
+                    sample.src_address,
+                    sample.src_resource,
+                    sample.src_sampler,
+                ]);
             }
             SampleL(sample) => {
                 self.write_instruction(opcode, offset, "sample_l");
 
-                self.write_operands(&[sample.dst, sample.src_address, sample.src_resource, sample.src_sampler, sample.src_lod]);
+                self.write_operands(&[
+                    sample.dst,
+                    sample.src_address,
+                    sample.src_resource,
+                    sample.src_sampler,
+                    sample.src_lod,
+                ]);
             }
             Ret => {
                 self.write_instruction(opcode, offset, "ret");
@@ -683,7 +807,12 @@ fn main() {
     let shader_bytes = include_bytes!("..\\assembled.dxbc");
 
     let start = 0x4;
-    println!("Real Checksum: {:?}", unsafe { ::std::slice::from_raw_parts(&shader_bytes[start..(start+16)] as *const _ as *const u32, 4) });
+    println!("Real Checksum: {:?}", unsafe {
+        ::std::slice::from_raw_parts(
+            &shader_bytes[start..(start + 16)] as *const _ as *const u32,
+            4,
+        )
+    });
     println!("???? Checksum: {:?}", dxbc::checksum(shader_bytes));
 
     let mut consumer = DisasmConsumer::new();

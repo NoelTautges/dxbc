@@ -30,7 +30,7 @@ impl<'a> Decoder<'a> {
         Decoder {
             bytes: self.bytes,
             offset,
-            limit: self.limit
+            limit: self.limit,
         }
     }
 
@@ -68,9 +68,7 @@ impl<'a> Decoder<'a> {
 
         self.offset += byte_len;
 
-        unsafe {
-            slice::from_raw_parts(slice.as_ptr() as _, n)
-        }
+        unsafe { slice::from_raw_parts(slice.as_ptr() as _, n) }
     }
 
     pub fn read_u64(&mut self) -> u64 {
@@ -104,11 +102,13 @@ impl<'a> Decoder<'a> {
     }
 
     pub fn str(&mut self) -> DecoderResult<&'a str> {
-        let null = self.bytes[self.offset..].iter().position(|&b| b == 0).unwrap_or(self.bytes.len());
+        let null = self.bytes[self.offset..]
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(self.bytes.len());
 
-        let string = str::from_utf8(
-            &self.bytes[self.offset..(self.offset + null)]
-        ).map_err(|e| Error::DecodeStrFailed(self.offset, e));
+        let string = str::from_utf8(&self.bytes[self.offset..(self.offset + null)])
+            .map_err(|e| Error::DecodeStrFailed(self.offset, e));
 
         self.offset += null + 1;
 
@@ -116,12 +116,13 @@ impl<'a> Decoder<'a> {
     }
 
     pub fn string(&mut self) -> DecoderResult<String> {
-        let null = self.bytes[self.offset..].iter().position(|&b| b == 0).unwrap_or(self.bytes.len());
+        let null = self.bytes[self.offset..]
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(self.bytes.len());
 
-        let string = String::from_utf8(
-            self.bytes[self.offset..(self.offset + null)]
-                .to_vec()
-        ).map_err(|e| Error::DecodeStringFailed(self.offset, e));
+        let string = String::from_utf8(self.bytes[self.offset..(self.offset + null)].to_vec())
+            .map_err(|e| Error::DecodeStringFailed(self.offset, e));
 
         self.offset += null + 1;
 

@@ -1,9 +1,9 @@
 extern crate dxbcross;
-extern crate rspirv;
 extern crate pretty_hex;
+extern crate rspirv;
 
-use rspirv::binary::Disassemble;
 use pretty_hex::PrettyHex;
+use rspirv::binary::Disassemble;
 
 fn main() {
     let spirv = include_bytes!("shader.spirv");
@@ -20,8 +20,10 @@ fn main() {
     let bytes = unsafe { std::slice::from_raw_parts(dxbc.as_ptr() as _, dxbc.len() * 4) };
     println!("{:?}", bytes.hex_dump());
 
-    use std::io::Write;
     use std::fs::File;
-    File::create("..\\dxbcd\\assembled.dxbc").unwrap().write_all(bytes).unwrap();
+    use std::io::Write;
+    File::create("..\\dxbcd\\assembled.dxbc")
+        .unwrap()
+        .write_all(bytes)
+        .unwrap();
 }
-
