@@ -29,7 +29,7 @@ impl<'a> Decoder<'a> {
     pub fn seek(&self, offset: usize) -> Self {
         Decoder {
             bytes: self.bytes,
-            offset: offset,
+            offset,
             limit: self.limit
         }
     }

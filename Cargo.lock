@@ -54,6 +54,7 @@ dependencies = [
  "bitflags",
  "byteorder",
  "term",
+ "winapi",
 ]
 
 [[package]]

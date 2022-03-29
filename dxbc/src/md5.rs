@@ -36,6 +36,8 @@
 // https://people.csail.mit.edu/rivest/Md5.c
 // https://tools.ietf.org/html/rfc1321
 
+#[allow(clippy::double_parens)]
+
 use core::convert;
 use core::fmt;
 use core::ops;

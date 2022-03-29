@@ -3,9 +3,9 @@ use super::rdef::RdefChunk;
 use super::shex::{ResourceDimension, ResourceReturnType};
 use super::stat::IStatChunk;
 use crate::checksum;
-use crate::d3d11tokenizedprogramformat::*;
 
 use std::{slice, mem};
+use winapi::um::d3d11tokenizedprogramformat::*;
 
 const DXBC_MAGIC: u32 = 0x43425844;
 const RDEF_MAGIC: u32 = 0x46454452;

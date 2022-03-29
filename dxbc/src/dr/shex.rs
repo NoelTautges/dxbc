@@ -1,8 +1,8 @@
 use crate::binary::*;
-use crate::d3d11tokenizedprogramformat::*;
 
 use std::mem;
 use std::marker::PhantomData;
+use winapi::um::d3d11tokenizedprogramformat::*;
 
 #[repr(u32)]
 #[derive(Debug)]
