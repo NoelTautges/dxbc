@@ -181,8 +181,9 @@ pub struct ConstantBuffer<'a> {
 impl<'a> ConstantBuffer<'a> {
     pub fn parse(decoder: &mut decoder::Decoder<'a>) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
-        let var_count = decoder.read_u32();
-        let var_offset = decoder.read_u32();
+        // TODO: add variables to constant buffers
+        let _var_count = decoder.read_u32();
+        let _var_offset = decoder.read_u32();
         let byte_size = decoder.read_u32();
         let flags = decoder.read_u32();
         let ty = decoder.read_u32();
@@ -269,7 +270,7 @@ impl<'a> RdefChunk<'a> {
         let author_offset = decoder.read_u32();
 
         let rd11 = if major >= 5 {
-            let magic = decoder.read_u32();
+            let _magic = decoder.read_u32();
             // assert_eq!(magic, b"RD11");
 
             Some([

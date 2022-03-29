@@ -24,6 +24,7 @@ pub enum Action {
     Error(Box<error::Error>),
 }
 
+#[allow(unused_variables)]
 pub trait Consumer {
     fn initialize(&mut self) -> Action;
     fn finalize(&mut self) -> Action;
@@ -32,8 +33,8 @@ pub trait Consumer {
     fn consume_rdef(&mut self, rdef: &dr::RdefChunk) -> Action { Action::Continue }
     fn consume_isgn(&mut self, isgn: &dr::IOsgnChunk) -> Action { Action::Continue }
     fn consume_osgn(&mut self, osgn: &dr::IOsgnChunk) -> Action { Action::Continue }
-    fn consume_shex(&mut self, osgn: &dr::ShexHeader) -> Action { Action::Continue }
-    fn consume_stat(&mut self, osgn: &dr::IStatChunk) -> Action { Action::Continue }
+    fn consume_shex(&mut self, shex: &dr::ShexHeader) -> Action { Action::Continue }
+    fn consume_stat(&mut self, stat: &dr::IStatChunk) -> Action { Action::Continue }
     fn consume_instruction(&mut self, offset: u32, instruction: dr::SparseInstruction) -> Action { Action::Continue }
 }
 

@@ -5,8 +5,6 @@ use dxbc::dr::*;
 use dxbc::dr::shex::*;
 use dxbc::binary::*;
 
-use std::mem;
-
 struct DisasmConsumer {
     out: Box<term::StdoutTerminal>,
     indent: u32,
@@ -61,7 +59,7 @@ impl DisasmConsumer {
         }
     }
 
-    fn begin_instruction<'a>(&mut self, opcode: OpcodeToken0<'a>, offset: u32, instruction: &str) {
+    fn begin_instruction<'a>(&mut self, _opcode: OpcodeToken0<'a>, offset: u32, instruction: &str) {
         self.out.fg(COMMENT_COLOR).unwrap();
         write!(self.out, "{:#08x}: ", offset).unwrap();
         self.out.reset().unwrap();
@@ -95,7 +93,7 @@ impl DisasmConsumer {
         self.end_instruction();
     }
 
-    fn write_resource_return_type<'a>(&mut self, opcode: OpcodeToken0<'a>, return_type: ResourceReturnTypeToken0<'a>) {
+    fn write_resource_return_type<'a>(&mut self, _opcode: OpcodeToken0<'a>, return_type: ResourceReturnTypeToken0<'a>) {
 
         write!(self.out, "(").unwrap();
         write!(self.out, "{:?}, ", return_type.get_return_type(ComponentName::X)).unwrap();
@@ -338,7 +336,7 @@ impl Consumer for DisasmConsumer {
         Action::Continue
     }
 
-    fn consume_header(&mut self, header: &dxbc::dr::DxbcHeader) -> Action {
+    fn consume_header(&mut self, _header: &dxbc::dr::DxbcHeader) -> Action {
         Action::Continue
     }
 
@@ -364,8 +362,9 @@ impl Consumer for DisasmConsumer {
         writeln!(self.out, "// Name                                 Type  Format         Dim      HLSL Bind  Count").unwrap();
         writeln!(self.out, "// ------------------------------ ---------- ------- ----------- -------------- ------").unwrap();
 
-        for bind in &rdef.resource_bindings {
-            // writeln!(self.out, "// {:30} {:10}", bind.name, return_type, bind.).unwrap();
+        // TODO: write resource bindings
+        for _bind in &rdef.resource_bindings {
+            //writeln!(self.out, "// {:30} {:10}", bind.name, return_type, bind.).unwrap();
         }
         writeln!(self.out, "//").unwrap();
         writeln!(self.out, "//").unwrap();
@@ -445,8 +444,7 @@ impl Consumer for DisasmConsumer {
         Action::Continue
     }
 
-    fn consume_shex(&mut self, osgn: &dxbc::dr::ShexHeader) -> Action {
-
+    fn consume_shex(&mut self, _osgn: &dxbc::dr::ShexHeader) -> Action {
         Action::Continue
     }
 
@@ -682,7 +680,7 @@ impl Consumer for DisasmConsumer {
 }
 
 fn main() {
-    let mut shader_bytes = include_bytes!("..\\assembled.dxbc");
+    let shader_bytes = include_bytes!("..\\assembled.dxbc");
 
     let start = 0x4;
     println!("Real Checksum: {:?}", unsafe { ::std::slice::from_raw_parts(&shader_bytes[start..(start+16)] as *const _ as *const u32, 4) });

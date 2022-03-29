@@ -185,6 +185,7 @@ impl io::Write for Context {
 }
 
 /// Compute the digest of data.
+#[allow(dead_code)]
 #[inline]
 pub fn compute<T: AsRef<[u8]>>(data: T) -> Digest {
     let mut context = Context::new();

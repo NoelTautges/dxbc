@@ -21,7 +21,7 @@ pub struct Builder<'a> {
     osgn: Option<IOsgnChunk>,
     stat: Option<IStatChunk>,
     shex: Option<ShexChunk>,
-    code: Vec<u32>,
+    _code: Vec<u32>,
 }
 
 pub struct DxbcModule {
@@ -138,7 +138,8 @@ impl DxbcModule {
         let author_pos = self.position();
         self.write_u32(0);
 
-        if let Some(rd11) = rdef.rd11 {
+        // TODO: figure out the deal with RD11
+        if let Some(_rd11) = rdef.rd11 {
             self.write_u32(RD11_MAGIC);
             self.write_u32(60);
             self.write_u32(24);
@@ -158,14 +159,14 @@ impl DxbcModule {
 
         let constant_buffers_loc = (self.position() - chunk_start) as u32;
         self.set_u32(constant_buffers_pos, constant_buffers_loc);
-        for constant_buffer in &rdef.constant_buffers {
-            // TODO: 
+        for _constant_buffer in &rdef.constant_buffers {
+            // TODO: write constant buffers
         }
 
         let resource_bindings_loc = (self.position() - chunk_start) as u32;
         self.set_u32(resource_bindings_pos, resource_bindings_loc);
-        for resource_binding in &rdef.resource_bindings {
-            // TODO: 
+        for _resource_binding in &rdef.resource_bindings {
+            // TODO: write resource bindings
         }
 
         let author_loc = 4 * (self.position() - chunk_start) as u32;
@@ -419,7 +420,7 @@ impl<'a> Builder<'a> {
             osgn: None,
             shex: None,
             stat: None,
-            code: Vec::new(),
+            _code: Vec::new(),
         }
     }
 
@@ -462,7 +463,7 @@ impl<'a> Builder<'a> {
         let size_pos = module.position();
         module.write_u32(0);
 
-        let mut chunk_count = 4;
+        let chunk_count = 4;
         module.write_u32(chunk_count);
         let chunk_count_pos = module.position();
         for _ in 0..chunk_count {
@@ -640,9 +641,11 @@ impl Instruction {
     fn encode_opcode(&self, module: &mut DxbcModule) {
         let opcode = self.get_opcode();
 
+        // TODO: encode other instructions
+        #[allow(unreachable_patterns)]
         match self {
-            Instruction::Add { dest, a, b, saturated } |
-            Instruction::Mul { dest, a, b, saturated } => { module.write_opcode(opcode, 0, None, *saturated, &[]); }
+            Instruction::Add { saturated, .. } |
+            Instruction::Mul { saturated, .. } => { module.write_opcode(opcode, 0, None, *saturated, &[]); }
 
             Instruction::DclGlobalFlags { flags } => {
                 let opcode_pos = module.position();
@@ -723,6 +726,8 @@ impl Operand {
     }
 
     fn encode(&self, module: &mut DxbcModule) {
+        // TODO: encode other operand types
+        #[allow(unused_variables)]
         match &self.ty {
             &OperandType::Register(reg) => {
                 module.write_operand(D3D10_SB_OPERAND_TYPE_TEMP, self.modifiers, self.component_mode, &[Immediate::U32(reg)])
