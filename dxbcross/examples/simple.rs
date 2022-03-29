@@ -11,7 +11,7 @@ fn main() {
     let module = dxbcross::SpirvModule::from_bytes(spirv);
     let dxbc = module.translate_entrypoint("vs", dxbcross::TargetVersion::V5_0);
 
-    let mut loader = rspirv::mr::Loader::new();
+    let mut loader = rspirv::dr::Loader::new();
     rspirv::binary::parse_bytes(&spirv[..], &mut loader).unwrap();
     let module = loader.module();
 

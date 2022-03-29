@@ -21,6 +21,8 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str {
+        // TODO: add descriptions for other errors
+        #[allow(clippy::match_single_binding)]
         match *self {
             _ => "unknown operand value for the given kind",
         }

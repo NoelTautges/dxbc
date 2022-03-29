@@ -541,7 +541,7 @@ impl<'a> OperandToken0<'a> {
         }
     }
 
-    pub fn parse<'b>(decoder: &mut decoder::Decoder<'b>) -> OperandToken0<'b> {
+    pub fn parse(decoder: &mut decoder::Decoder) -> OperandToken0<'a> {
         let operand = OperandToken0::from_word(decoder.read_u32_address());
 
         if operand.is_extended() {
@@ -636,6 +636,10 @@ impl<'a> OperandToken0<'a> {
         }
 
         len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn get_extended_operand(&self) -> Option<OperandToken1<'a>> {
@@ -1223,7 +1227,7 @@ pub struct ShexHeader {
 }
 
 impl ShexHeader {
-    pub fn parse<'b>(decoder: &'b mut decoder::Decoder) -> Result<Self, State> {
+    pub fn parse(decoder: &mut decoder::Decoder) -> Result<Self, State> {
         let version = decoder.read_u8();
         let minor = version & 0x0f;
         let major = version >> 0x4;

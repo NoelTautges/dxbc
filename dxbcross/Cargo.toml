@@ -2,6 +2,7 @@
 name = "dxbcross"
 version = "0.1.0"
 authors = ["Felix Kaaman <trundmatu@gmail.com>"]
+edition = "2021"
 
 [dependencies]
 bitflags = "1.3.2"

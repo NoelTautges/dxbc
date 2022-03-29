@@ -1,16 +1,9 @@
-extern crate bitflags;
-extern crate byteorder;
-extern crate rspirv;
-extern crate spirv_headers as spirv;
-extern crate dxbc;
-
-use rspirv::binary::{Consumer, ParseAction};
-use rspirv::mr;
-use rspirv::sr;
+#![allow(dead_code)]
 
 use dxbc::dr;
-
-use std::slice;
+use rspirv::dr as spv_dr;
+use rspirv::spirv;
+use rspirv::sr;
 
 #[derive(Debug, Copy, Clone)]
 pub enum TargetVersion {
@@ -133,10 +126,10 @@ enum Ty {
 
 impl Ty {
     fn scalar(&self) -> Option<Scalar> {
-        match self {
-            &Ty::Integer(int) => Some(Scalar::Numerical(Numerical::Integer(int))),
-            &Ty::Float(flt) => Some(Scalar::Numerical(Numerical::Float(flt))),
-            &Ty::Bool => Some(Scalar::Bool),
+        match *self {
+            Ty::Integer(int) => Some(Scalar::Numerical(Numerical::Integer(int))),
+            Ty::Float(flt) => Some(Scalar::Numerical(Numerical::Float(flt))),
+            Ty::Bool => Some(Scalar::Bool),
             _ => None,
         }
     }
@@ -151,7 +144,7 @@ struct Metadata {
 }
 
 impl Metadata {
-    fn conv_types(module: &mr::Module) -> Vec<Option<Ty>> {
+    fn conv_types(module: &spv_dr::Module) -> Vec<Option<Ty>> {
         let upper_bound = module.header.as_ref().map(|h| h.bound as usize).unwrap();
         let mut types = vec![None; upper_bound];
 
@@ -170,12 +163,12 @@ impl Metadata {
                     types[result_id as usize] = Some(Ty::Float(Float::Float32));
                 }
                 spirv::Op::TypeVector => {
-                    let id = if let mr::Operand::IdRef(id) = instr.operands[0] {
+                    let id = if let spv_dr::Operand::IdRef(id) = instr.operands[0] {
                         id
                     } else {
                         unimplemented!()
                     };
-                    let count = if let mr::Operand::LiteralInt32(count) = instr.operands[1] {
+                    let count = if let spv_dr::Operand::LiteralInt32(count) = instr.operands[1] {
                         count
                     } else {
                         unimplemented!()
@@ -186,12 +179,12 @@ impl Metadata {
                 spirv::Op::TypeMatrix => {
                 }
                 spirv::Op::TypePointer => {
-                    let storage_class = if let mr::Operand::StorageClass(class) = instr.operands[0] {
+                    let storage_class = if let spv_dr::Operand::StorageClass(class) = instr.operands[0] {
                         class
                     } else {
                         unimplemented!()
                     };
-                    let id = if let mr::Operand::IdRef(id) = instr.operands[1] {
+                    let id = if let spv_dr::Operand::IdRef(id) = instr.operands[1] {
                         id
                     } else {
                         unimplemented!()
@@ -206,7 +199,7 @@ impl Metadata {
         types
     }
 
-    fn conv_decorations(module: &mr::Module) -> Vec<Option<Vec<sr::Decoration>>> {
+    fn conv_decorations(module: &spv_dr::Module) -> Vec<Option<Vec<sr::Decoration>>> {
         let upper_bound = module.header.as_ref().map(|h| h.bound as usize).unwrap();
         let mut decorations: Vec<Option<Vec<sr::Decoration>>> = vec![None; upper_bound];
 
@@ -215,13 +208,13 @@ impl Metadata {
                 continue;
             }
 
-            let id = if let mr::Operand::IdRef(id) = inst.operands[0] {
+            let id = if let spv_dr::Operand::IdRef(id) = inst.operands[0] {
                 id
             } else {
                 unimplemented!()
             };
 
-            let decoration = if let mr::Operand::Decoration(decoration) = inst.operands[1] {
+            let decoration = if let spv_dr::Operand::Decoration(decoration) = inst.operands[1] {
                 decoration
             } else {
                 unimplemented!()
@@ -257,7 +250,7 @@ impl Metadata {
                 spirv::Decoration::ViewportRelativeNV => sr::Decoration::ViewportRelativeNV,
                 spirv::Decoration::NonUniformEXT => sr::Decoration::NonUniformEXT,
                 spirv::Decoration::BuiltIn => {
-                    let builtin = if let mr::Operand::BuiltIn(builtin) = inst.operands[2] {
+                    let builtin = if let spv_dr::Operand::BuiltIn(builtin) = inst.operands[2] {
                         builtin
                     } else {
                         unimplemented!()
@@ -266,7 +259,7 @@ impl Metadata {
                     sr::Decoration::BuiltIn(builtin)
                 }
                 spirv::Decoration::Location => {
-                    let loc = if let mr::Operand::LiteralInt32(loc) = inst.operands[2] {
+                    let loc = if let spv_dr::Operand::LiteralInt32(loc) = inst.operands[2] {
                         loc
                     } else {
                         unimplemented!()
@@ -279,7 +272,7 @@ impl Metadata {
                 _ => unimplemented!()
             };
 
-            let mut decorations = &mut decorations[id as usize];
+            let decorations = &mut decorations[id as usize];
             if let Some(decorations) = decorations {
                 decorations.push(decoration);
             } else {
@@ -290,7 +283,7 @@ impl Metadata {
         decorations
     }
 
-    fn from_module(module: &mr::Module) -> Self {
+    fn from_module(module: &spv_dr::Module) -> Self {
         let decorations = Self::conv_decorations(module);
         let types = Self::conv_types(module);
 
@@ -302,7 +295,7 @@ impl Metadata {
 
     fn get_decorations(&self, id: u32) -> &[sr::Decoration] {
         if let Some(decorations) = &self.decorations[id as usize] {
-            &decorations
+            decorations
         } else {
             &[]
         }
@@ -314,12 +307,14 @@ impl Metadata {
 }
 
 pub struct SpirvModule {
-    module: rspirv::mr::Module,
+    module: rspirv::dr::Module,
     meta: Metadata,
 }
 
 impl SpirvModule {
     fn conv_variable(&self, ty: &Ty, type_id: u32) -> dr::InputOutputElement {
+        // TODO: convert other variable types
+        #[allow(unused_variables)]
         let (component_type, component_count) = match ty {
             Ty::Vector(Vector { ty, count }) => {
                 match ty {
@@ -343,8 +338,10 @@ impl SpirvModule {
         };
 
         for decoration in self.meta.get_decorations(type_id) {
+            #[allow(clippy::collapsible_match)]
             match decoration {
                 sr::Decoration::BuiltIn(builtin) => {
+                    #[allow(clippy::single_match)]
                     match builtin {
                         spirv::BuiltIn::Position => {
                             elem.semantic_type = dr::SemanticName::Position;
@@ -368,7 +365,7 @@ impl SpirvModule {
 
     // TODO: result
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        let mut loader = rspirv::mr::Loader::new();
+        let mut loader = rspirv::dr::Loader::new();
         rspirv::binary::parse_bytes(bytes, &mut loader).unwrap();
 
         let module = loader.module();
@@ -381,8 +378,8 @@ impl SpirvModule {
         }
     }
 
-    fn find_function(&self, id: &mr::Operand) -> Option<&mr::Function> {
-        let id = if let &mr::Operand::IdRef(id) = id {
+    fn find_function(&self, id: &spv_dr::Operand) -> Option<&spv_dr::Function> {
+        let id = if let &spv_dr::Operand::IdRef(id) = id {
             id
         } else {
             return None;
@@ -420,7 +417,7 @@ impl SpirvModule {
                 let ty = self.meta.get_type(ty_id).unwrap();
 
                 if let Ty::Pointer(Pointer { storage_class, ty }) = &ty {
-                    let elem = self.conv_variable(&ty, id);
+                    let elem = self.conv_variable(ty, id);
 
                     match storage_class {
                         spirv::StorageClass::Input => { inputs.push(elem); }
@@ -432,7 +429,9 @@ impl SpirvModule {
         }
     }
 
-    fn get_iosgn(&self, entrypoint: &mr::Instruction, globals: &[mr::Instruction], decorations: &[mr::Instruction]) -> (dr::IOsgnChunk, dr::IOsgnChunk) {
+    // TODO: use globals and decorations
+    #[allow(unused_variables)]
+    fn get_iosgn(&self, entrypoint: &spv_dr::Instruction, globals: &[spv_dr::Instruction], decorations: &[spv_dr::Instruction]) -> (dr::IOsgnChunk, dr::IOsgnChunk) {
         let mut isgn = dr::IOsgnChunk {
             elements: Vec::new()
         };
@@ -443,8 +442,10 @@ impl SpirvModule {
         // go through all inputs/outputs of the entrypoint and append to our
         // chunks
         for operand in &entrypoint.operands[3..] {
+            // TODO: add more operand types
+            #[allow(clippy::single_match)]
             match operand {
-                &mr::Operand::IdRef(id) => {
+                &spv_dr::Operand::IdRef(id) => {
                     self.add_io_element(
                         &mut isgn.elements,
                         &mut osgn.elements,
@@ -458,9 +459,11 @@ impl SpirvModule {
         (isgn, osgn)
     }
 
+    // TODO: make use of target version
+    #[allow(unused_variables)]
     pub fn translate_entrypoint(&self, entrypoint: &str, target: TargetVersion) -> Vec<u32> {
         let entrypoint = self.module.entry_points.iter().find(|e| {
-            if let mr::Operand::LiteralString(ref name) = e.operands[2] {
+            if let spv_dr::Operand::LiteralString(ref name) = e.operands[2] {
                 entrypoint == name
             } else {
                 false
@@ -469,7 +472,7 @@ impl SpirvModule {
 
         let function = self.find_function(&entrypoint.operands[1]).unwrap();
 
-        println!("{:#?}", function.basic_blocks);
+        println!("{:#?}", function.blocks);
 
         let mut builder = dr::Builder::new();
 
@@ -480,7 +483,7 @@ impl SpirvModule {
             minor: 0,
             major: 5,
             flags: 0,
-            author: &"DXBCross 0",
+            author: "DXBCross 0",
             rd11: Some([0u32; 7]),
         });
 

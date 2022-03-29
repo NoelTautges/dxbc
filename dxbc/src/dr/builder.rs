@@ -60,11 +60,11 @@ impl DxbcModule {
 
         // NOTE: fxc pads with 0xABAB.. pattern
         for chunk in text.as_bytes().chunks(4) {
-            let data = match chunk {
-                &[d, c, b, a] => ((a as u32) << 24) | ((b as u32) << 16) | ((c as u32) << 8) | d as u32,
-                &[c, b, a] => ((a as u32) << 16) | ((b as u32) << 8) | (c as u32),
-                &[b, a] => ((a as u32) << 8) | (b as u32),
-                &[a] => a as u32,
+            let data = match *chunk {
+                [d, c, b, a] => ((a as u32) << 24) | ((b as u32) << 16) | ((c as u32) << 8) | d as u32,
+                [c, b, a] => ((a as u32) << 16) | ((b as u32) << 8) | (c as u32),
+                [b, a] => ((a as u32) << 8) | (b as u32),
+                [a] => a as u32,
                 _ => unreachable!()
             };
 
@@ -245,7 +245,7 @@ impl DxbcModule {
             ENCODE_D3D10_SB_TOKENIZED_INSTRUCTION_LENGTH(instruction_len) |
             ENCODE_D3D10_SB_INSTRUCTION_SATURATE(saturated as u32);
 
-        if extended.len() != 0 {
+        if !extended.is_empty() {
             opcode |= ENCODE_D3D10_SB_OPCODE_EXTENDED(1);
         }
 
@@ -370,24 +370,24 @@ impl DxbcModule {
         }
 
         for imm in immediates {
-            let relative = match imm {
-                &Immediate::U32(val) => {
+            let relative = match *imm {
+                Immediate::U32(val) => {
                     self.write_u32(val);
                     None
                 }
-                &Immediate::U64(val) => {
+                Immediate::U64(val) => {
                     // TODO: u64
                     self.write_u32(val as u32);
                     None
                 }
-                &Immediate::Relative(ref rel) => {
+                Immediate::Relative(ref rel) => {
                     Some(rel)
                 }
-                &Immediate::U32Relative(val, ref rel) => {
+                Immediate::U32Relative(val, ref rel) => {
                     self.write_u32(val);
                     Some(rel)
                 }
-                &Immediate::U64Relative(val, ref rel) => {
+                Immediate::U64Relative(val, ref rel) => {
                     // TODO: u64
                     self.write_u32(val as u32);
                     Some(rel)
@@ -409,6 +409,12 @@ impl DxbcModule {
                 self.dwords.len() * mem::size_of::<u32>(),
             )
         }
+    }
+}
+
+impl Default for DxbcModule {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -448,6 +454,8 @@ impl<'a> Builder<'a> {
 
     }
 
+    // TODO: determine fallibility
+    #[allow(clippy::result_unit_err)]
     pub fn module(&self) -> Result<DxbcModule, ()> {
         let mut module = DxbcModule::new();
 
@@ -495,7 +503,6 @@ impl<'a> Builder<'a> {
             module.write_shex(shex);
         }
 
-
         // finally, patch in size and checksum
         let len = 4 * module.dwords.len() as u32;
         module.set_u32(size_pos, len);
@@ -509,6 +516,12 @@ impl<'a> Builder<'a> {
     }
 }
 
+impl<'a> Default for Builder<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 bitflags! {
     pub struct GlobalFlags: u32 {
         const REFACTORING_ALLOWED = 1 << 11;
@@ -519,7 +532,6 @@ bitflags! {
         const ENABLE_MINIMUM_PRECISION = 1 << 16;
         const ENABLE_DOUBLE_EXTENSIONS = 1 << 17;
         const ENABLE_SHADER_EXTENSIONS = 1 << 18;
-
     }
 }
 
@@ -752,9 +764,9 @@ impl Operand {
 
     fn get_type(&self) -> u32 {
         match &self.ty {
-            &OperandType::Register(..) => D3D10_SB_OPERAND_TYPE_TEMP,
-            &OperandType::Input(..) => D3D10_SB_OPERAND_TYPE_INPUT,
-            &OperandType::Output(..) => D3D10_SB_OPERAND_TYPE_OUTPUT,
+            OperandType::Register(..) => D3D10_SB_OPERAND_TYPE_TEMP,
+            OperandType::Input(..) => D3D10_SB_OPERAND_TYPE_INPUT,
+            OperandType::Output(..) => D3D10_SB_OPERAND_TYPE_OUTPUT,
             _ => 100000,
         }
     }
@@ -773,5 +785,11 @@ impl ShexChunk {
 
     pub fn add_instruction(&mut self, instruction: Instruction) {
         self.instructions.push(instruction);
+    }
+}
+
+impl Default for ShexChunk {
+    fn default() -> Self {
+        Self::new()
     }
 }

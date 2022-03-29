@@ -188,7 +188,7 @@ impl<'a> ConstantBuffer<'a> {
         let flags = decoder.read_u32();
         let ty = decoder.read_u32();
 
-        let name = decoder.seek(name_offset as usize).str().map_err(|e| State::DecoderError(e))?;
+        let name = decoder.seek(name_offset as usize).str().map_err(State::DecoderError)?;
         let variables = Vec::new();
 
         Ok(Self {
@@ -225,7 +225,7 @@ impl<'a> ResourceBinding<'a> {
         let bind_count = decoder.read_u32();
         let input_flags = decoder.read_u32();
 
-        let name = decoder.seek(name_offset as usize).str().map_err(|e| State::DecoderError(e))?;
+        let name = decoder.seek(name_offset as usize).str().map_err(State::DecoderError)?;
 
         Ok(Self {
             name,
@@ -298,7 +298,7 @@ impl<'a> RdefChunk<'a> {
             resource_bindings.push(ResourceBinding::parse(decoder)?);
         }
 
-        let author = decoder.seek(author_offset as usize).str().map_err(|e| State::DecoderError(e))?;
+        let author = decoder.seek(author_offset as usize).str().map_err(State::DecoderError)?;
 
         Ok(RdefChunk {
             constant_buffers,

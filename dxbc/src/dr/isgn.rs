@@ -70,7 +70,7 @@ pub struct InputOutputElement {
 }
 
 impl InputOutputElement {
-    pub fn parse<'a>(decoder: &mut decoder::Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut decoder::Decoder) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
         let semantic_index = decoder.read_u32();
         let semantic_type = SemanticName::from_word(decoder.read_u32());
@@ -80,7 +80,7 @@ impl InputOutputElement {
         let rw_mask = decoder.read_u8();
         decoder.skip(2);
 
-        let name = decoder.seek(name_offset as usize).string().map_err(|e| State::DecoderError(e))?;
+        let name = decoder.seek(name_offset as usize).string().map_err(State::DecoderError)?;
 
         Ok(Self {
             name,
@@ -101,7 +101,7 @@ pub struct IOsgnChunk {
 }
 
 impl IOsgnChunk {
-    pub fn parse<'b>(decoder: &'b mut decoder::Decoder) -> Result<IOsgnChunk, State> {
+    pub fn parse(decoder: &mut decoder::Decoder) -> Result<IOsgnChunk, State> {
         let element_count = decoder.read_u32();
         let _unknown = decoder.read_u32();
 

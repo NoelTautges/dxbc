@@ -118,7 +118,7 @@ impl DisasmConsumer {
         }
     }
 
-    fn write_immediate<'a>(&mut self, imm: Immediate<'a>) {
+    fn write_immediate(&mut self, imm: Immediate) {
         match imm {
             Immediate::U32(val) => { write!(self.out, "{}", val).unwrap(); },
             Immediate::U64(val) => { write!(self.out, "{}", val).unwrap(); },
@@ -146,7 +146,7 @@ impl DisasmConsumer {
             }
         }
 
-        writeln!(self.out, "").unwrap();
+        writeln!(self.out).unwrap();
     }
 
     fn write_operand<'a>(&mut self, operand: &OperandToken0<'a>) {
@@ -458,9 +458,9 @@ impl Consumer for DisasmConsumer {
                 self.write_instruction(opcode, offset, "dcl_globalFlags");
 
                 if flags.is_refactoring_allowed() {
-                    write!(self.out, "{}", "refactoringAllowed").unwrap();
+                    write!(self.out, "refactoringAllowed").unwrap();
                 }
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclInput(input) => {
                 self.write_instruction(opcode, offset, "dcl_input");
@@ -473,7 +473,7 @@ impl Consumer for DisasmConsumer {
                     _ => { write!(self.out, "TODO").unwrap(); }
                 };
                 self.write_mask(input.operand.get_component_mask());
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclInputPs(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps");
@@ -489,7 +489,7 @@ impl Consumer for DisasmConsumer {
                     _ => { write!(self.out, "TODO").unwrap(); }
                 };
                 self.write_mask(input.operand.get_component_mask());
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclInputPsSiv(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps_siv");
@@ -506,7 +506,7 @@ impl Consumer for DisasmConsumer {
 
                 write!(self.out, " {}", get_name_token_name(input.get_system_name())).unwrap();
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclInputPsSgv(input) => {
                 self.write_instruction(opcode, offset, "dcl_input_ps_sgv");
@@ -522,13 +522,13 @@ impl Consumer for DisasmConsumer {
                 self.write_mask(input.operand.get_component_mask());
 
                 write!(self.out, " {}", get_name_token_name(input.get_system_name())).unwrap();
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclOutput(output) => {
                 self.write_instruction(opcode, offset, "dcl_output");
                 write!(self.out, "o{}.", output.get_output_register()).unwrap();
                 self.write_mask(output.operand.get_component_mask());
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             DclConstantBuffer(cb) => {
                 self.write_instruction(opcode, offset, "dcl_constantbuffer");
@@ -621,31 +621,31 @@ impl Consumer for DisasmConsumer {
                 self.write_instruction(opcode, offset, "else");
                 self.indent += 1;
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             EndIf => {
                 self.indent -= 1;
                 self.write_instruction(opcode, offset, "endif");
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
 
             Loop => {
                 self.write_instruction(opcode, offset, "loop");
                 self.indent += 1;
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             EndLoop => {
                 self.indent -= 1;
                 self.write_instruction(opcode, offset, "endloop");
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             Break => {
                 self.write_instruction(opcode, offset, "break");
 
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             BreakC(breakc) => {
                 self.begin_instruction(opcode, offset, "breakc");
@@ -666,7 +666,7 @@ impl Consumer for DisasmConsumer {
             }
             Ret => {
                 self.write_instruction(opcode, offset, "ret");
-                writeln!(self.out, "").unwrap();
+                writeln!(self.out).unwrap();
             }
             _ => {
                 println!("  {:?}", instruction);

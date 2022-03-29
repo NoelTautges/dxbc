@@ -124,8 +124,10 @@ impl<'c, 'd> Parser<'c, 'd> {
     fn parse_header(&mut self) -> Result<&'d dr::DxbcHeader, State> {
         let bytes = self.decoder.bytes(mem::size_of::<dr::DxbcHeader>());
 
+        // mcarton says raw pointer casts have additional sanity checking
+        // compared to transmute: https://github.com/rust-lang/rust-clippy/issues/864#issuecomment-211926815
         let header: &'d dr::DxbcHeader = unsafe {
-            mem::transmute(bytes.as_ptr())
+            &*(bytes.as_ptr() as *const dr::DxbcHeader)
         };
 
         if header.magic == *b"DXBC" {
