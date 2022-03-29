@@ -5,6 +5,6 @@ authors = ["Felix Kaaman <trundmatu@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-byteorder = "1"
-bitflags = "1"
-term = "0.5"
+bitflags = "1.3.2"
+byteorder = "1.4.3"
+term = "0.7.0"
