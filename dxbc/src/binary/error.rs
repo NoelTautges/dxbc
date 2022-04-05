@@ -8,6 +8,7 @@ pub enum Error {
     LimitReached(usize),
     DecodeStringFailed(usize, FromUtf8Error),
     DecodeStrFailed(usize, Utf8Error),
+    DecodeEnumFailed(usize),
 }
 
 impl fmt::Display for Error {

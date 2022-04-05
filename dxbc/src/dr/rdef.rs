@@ -1,5 +1,8 @@
 use crate::binary::*;
 
+use num;
+use num_derive::FromPrimitive;
+
 bitflags! {
     pub struct ShaderInputFlags: u32 {
         const NONE = 0x0;
@@ -246,12 +249,23 @@ impl<'a> ResourceBinding<'a> {
     }
 }
 
+#[repr(u16)]
+#[derive(Clone, Copy, Debug, FromPrimitive)]
+pub enum ProgramType {
+    Pixel = 0xFFFF,
+    Vertex = 0xFFFE,
+    Hull = 0x4853,
+    Geometry = 0x4753,
+    Domain = 0x4453,
+    Compute = 0x4353,
+}
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct RdefChunk<'a> {
     pub constant_buffers: Vec<ConstantBuffer<'a>>,
     pub resource_bindings: Vec<ResourceBinding<'a>>,
-    pub shader_ty: u16,
+    pub program_ty: ProgramType,
     pub minor: u8,
     pub major: u8,
     pub flags: u32,
@@ -270,7 +284,10 @@ impl<'a> RdefChunk<'a> {
         let minor = decoder.read_u8();
         let major = decoder.read_u8();
 
-        let shader_ty = decoder.read_u16();
+        let program_ty = match num::FromPrimitive::from_u16(decoder.read_u16()) {
+            Some(ty) => ty,
+            None => return Err(State::DecoderError(Error::DecodeEnumFailed(decoder.get_offset()))),
+        };
 
         let flags = decoder.read_u32();
         let author_offset = decoder.read_u32();
@@ -312,7 +329,7 @@ impl<'a> RdefChunk<'a> {
         Ok(RdefChunk {
             constant_buffers,
             resource_bindings,
-            shader_ty,
+            program_ty,
             minor,
             major,
             flags,

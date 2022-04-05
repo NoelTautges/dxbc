@@ -1082,20 +1082,20 @@ impl<'a> DclSampler<'a> {
 
 #[derive(Debug)]
 pub struct DclOutputSiv<'a> {
-    pub operand: OperandToken0<'a>,
-    pub operand_2: OperandToken0<'a>,
+    pub register: OperandToken0<'a>,
+    pub semantic: OperandToken0<'a>,
 }
 
 impl<'a> DclOutputSiv<'a> {
     pub fn get_output_register(&self) -> u32 {
-        match self.operand.get_immediate(0) {
+        match self.register.get_immediate(0) {
             Immediate::U32(reg) => reg,
             _ => !0,
         }
     }
 
     pub fn get_system_name(&self) -> NameToken {
-        NameToken::from_word(DECODE_D3D10_SB_NAME(unsafe { *self.operand_2.word }))
+        NameToken::from_word(DECODE_D3D10_SB_NAME(unsafe { *self.semantic.word }))
     }
 }
 
@@ -1378,8 +1378,8 @@ impl<'a> SparseInstruction<'a> {
                 num_components: decoder.read_u32(),
             }),
             D3D10_SB_OPCODE_DCL_OUTPUT_SIV => Operands::DclOutputSiv(DclOutputSiv {
-                operand: OperandToken0::parse(decoder),
-                operand_2: OperandToken0::parse(decoder),
+                register: OperandToken0::parse(decoder),
+                semantic: OperandToken0::parse(decoder),
             }),
             D3D10_SB_OPCODE_DCL_OUTPUT_SGV => Operands::DclOutputSgv(DclOutputSgv {
                 operand: OperandToken0::parse(decoder),

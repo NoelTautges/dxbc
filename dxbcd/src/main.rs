@@ -676,7 +676,7 @@ impl Consumer for DisasmConsumer {
             DclOutputSiv(siv) => {
                 self.write_instruction(opcode, offset, "dcl_output_siv");
                 write!(self.out, "o{}.", siv.get_output_register()).unwrap();
-                self.write_mask(siv.operand.get_component_mask());
+                self.write_mask(siv.register.get_component_mask());
                 writeln!(self.out, ", {:?}", siv.get_system_name()).unwrap();
             }
             Add(add) => {

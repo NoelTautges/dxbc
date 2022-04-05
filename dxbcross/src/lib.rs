@@ -494,7 +494,7 @@ impl SpirvModule {
         builder.set_rdef(dr::RdefChunk {
             constant_buffers: Vec::new(),
             resource_bindings: Vec::new(),
-            shader_ty: 1,
+            program_ty: 1,
             minor: 0,
             major: 5,
             flags: 0,

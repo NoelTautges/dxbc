@@ -130,7 +130,7 @@ impl DxbcModule {
         let resource_bindings_pos = self.position();
         self.write_u32(0);
 
-        let version_tok = (((rdef.shader_ty as u32) << 16) & 0xffff0000)
+        let version_tok = (((rdef.program_ty as u32) << 16) & 0xffff0000)
             | (((rdef.major as u32) << 4) & 0x000000f0)
             | (rdef.minor as u32 & 0x0000000f);
         self.write_u32(version_tok);
