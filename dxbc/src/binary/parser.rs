@@ -101,7 +101,7 @@ impl<'c, 'd> Parser<'c, 'd> {
                     let osgn = dr::IOsgnChunk::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_osgn(&osgn))?;
                 }
-                b"SHEX" => {
+                b"SHEX" | b"SHDR" => {
                     let shex = dr::ShexHeader::parse(&mut decoder)?;
                     try_consume(self.consumer.consume_shex(&shex))?;
 
