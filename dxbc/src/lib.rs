@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate bitflags;
+#[macro_use]
+extern crate paste;
 
 pub mod binary;
 pub mod checksum;

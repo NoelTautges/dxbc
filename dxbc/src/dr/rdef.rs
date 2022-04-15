@@ -1,11 +1,9 @@
 use crate::binary::*;
 
-use num;
-use num_derive::FromPrimitive;
+use int_enum::IntEnum;
 
 bitflags! {
     pub struct ShaderInputFlags: u32 {
-        const NONE = 0x0;
         const USER_PACKED = 0x1;
         const COMPARISON_SAMPLER = 0x2;
         const TEXTURE_COMPONENT_0 = 0x4;
@@ -13,21 +11,15 @@ bitflags! {
         const TEXTURE_COMPONENTS = 0xc;
         const UNUSED = 0x10;
     }
-}
-
-bitflags! {
+    
     pub struct ShaderVariableFlags: u32 {
-        const NONE = 0x0;
         const USER_PACKED = 0x1;
         const USED = 0x2;
         const INTERFACE_POINTER = 0x4;
         const INTERFACE_PARAMETER = 0x8;
     }
-}
-
-bitflags! {
+    
     pub struct ConstantBufferFlags: u32 {
-        const NONE = 0x0;
         const USER_PACKED = 0x1;
     }
 }
@@ -59,24 +51,24 @@ pub enum ShaderInputType {
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ShaderVariableClass {
-    Scalar,
-    Vector,
-    MatrixRows,
-    MatrixColumns,
-    Object,
-    Struct,
-    InterfaceClass,
-    InterfacePointer,
+    Scalar = 0,
+    Vector = 1,
+    MatrixRows = 2,
+    MatrixColumns = 3,
+    Object = 4,
+    Struct = 5,
+    InterfaceClass = 6,
+    InterfacePointer = 7,
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ShaderVariableType {
     Void = 0,
     Bool = 1,
-    Int = 2,
+    Int_ = 2,
     Float = 3,
     String = 4,
     Texture = 5,
@@ -108,18 +100,18 @@ pub enum ShaderVariableType {
     InterfacePointer = 37,
     ComputeShader = 38,
     Double = 39,
-    ReadWriteTexture1D,
-    ReadWriteTexture1DArray,
-    ReadWriteTexture2D,
-    ReadWriteTexture2DArray,
-    ReadWriteTexture3D,
-    ReadWriteBuffer,
-    ByteAddressBuffer,
-    ReadWriteByteAddressBuffer,
-    StructuredBuffer,
-    ReadWriteStructuredBuffer,
-    AppendStructuredBuffer,
-    ConsumeStructuredBuffer,
+    ReadWriteTexture1D = 40,
+    ReadWriteTexture1DArray = 41,
+    ReadWriteTexture2D = 42,
+    ReadWriteTexture2DArray = 43,
+    ReadWriteTexture3D = 44,
+    ReadWriteBuffer = 45,
+    ByteAddressBuffer = 46,
+    ReadWriteByteAddressBuffer = 47,
+    StructuredBuffer = 48,
+    ReadWriteStructuredBuffer = 49,
+    AppendStructuredBuffer = 50,
+    ConsumeStructuredBuffer = 51,
 }
 
 #[repr(u32)]
@@ -150,6 +142,27 @@ pub enum ShaderModel {
 pub struct ShaderTypeMember<'a> {
     name: &'a str,
     ty: ShaderType<'a>,
+    offset: u32,
+}
+
+impl<'a> ShaderTypeMember<'a> {
+    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+        let name_offset = decoder.read_u32() as usize;
+        let ty_offset = decoder.read_u32() as usize;
+        let offset = decoder.read_u32();
+
+        let name = decoder
+            .seek(name_offset)
+            .str()
+            .map_err(State::DecoderError)?;
+        let ty = ShaderType::parse(&mut decoder.seek(ty_offset))?;
+
+        Ok(Self {
+            name,
+            ty,
+            offset,
+        })
+    }
 }
 
 #[repr(C)]
@@ -163,12 +176,68 @@ pub struct ShaderType<'a> {
     members: Vec<ShaderTypeMember<'a>>,
 }
 
+impl<'a> ShaderType<'a> {
+    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+        let class = read_enum!(ShaderVariableClass, decoder, u16);
+        let ty = read_enum!(ShaderVariableType, decoder, u16);
+        let rows = decoder.read_u16();
+        let columns = decoder.read_u16();
+        let count = decoder.read_u16();
+        let member_count = decoder.read_u16();
+        let member_offset = decoder.read_u16();
+
+        let mut members = Vec::with_capacity(member_count.into());
+        decoder.seek_mut(member_offset.into());
+        for _ in 0..member_count {
+            members.push(ShaderTypeMember::parse(decoder)?);
+        }
+
+        Ok(Self {
+            class,
+            ty,
+            rows,
+            columns,
+            count,
+            members,
+        })
+    }
+}
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ShaderVariable<'a> {
     name: &'a str,
-    byte_size: u32,
+    offset: u32,
+    size: u32,
     flags: ShaderVariableFlags,
+    ty: ShaderType<'a>,
+    // TODO: default value
+}
+
+impl<'a> ShaderVariable<'a> {
+    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+        let name_offset = decoder.read_u32() as usize;
+        let offset = decoder.read_u32();
+        let size = decoder.read_u32();
+        let flags = ShaderVariableFlags::from_bits_truncate(decoder.read_u32());
+        let ty_offset = decoder.read_u32() as usize;
+        let default_offset = decoder.read_u32() as usize;
+
+        let name = decoder
+            .seek(name_offset)
+            .str()
+            .map_err(State::DecoderError)?;
+        let ty = ShaderType::parse(&mut decoder.seek(ty_offset))?;
+        // TODO: default
+
+        Ok(Self {
+            name,
+            offset,
+            size,
+            flags,
+            ty,
+        })
+    }
 }
 
 #[repr(C)]
@@ -176,18 +245,18 @@ pub struct ShaderVariable<'a> {
 pub struct ConstantBuffer<'a> {
     pub name: &'a str,
     pub variables: Vec<ShaderVariable<'a>>,
-    pub byte_size: u32,
+    pub size: u32,
     pub flags: u32,
     pub ty: u32,
 }
 
 impl<'a> ConstantBuffer<'a> {
-    pub fn parse(decoder: &mut decoder::Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
         // TODO: add variables to constant buffers
-        let _var_count = decoder.read_u32();
-        let _var_offset = decoder.read_u32();
-        let byte_size = decoder.read_u32();
+        let var_count = decoder.read_u32();
+        let var_offset = decoder.read_u32() as usize;
+        let size = decoder.read_u32();
         let flags = decoder.read_u32();
         let ty = decoder.read_u32();
 
@@ -195,12 +264,18 @@ impl<'a> ConstantBuffer<'a> {
             .seek(name_offset as usize)
             .str()
             .map_err(State::DecoderError)?;
-        let variables = Vec::new();
+        let mut variables = Vec::new();
+
+        decoder.seek_mut(var_offset);
+
+        for _ in 0..var_count {
+            variables.push(ShaderVariable::parse(decoder)?);
+        }
 
         Ok(Self {
             name,
             variables,
-            byte_size,
+            size,
             flags,
             ty,
         })
@@ -221,7 +296,7 @@ pub struct ResourceBinding<'a> {
 }
 
 impl<'a> ResourceBinding<'a> {
-    pub fn parse(decoder: &mut decoder::Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
         let input_type = decoder.read_u32();
         let return_type = decoder.read_u32();
@@ -250,7 +325,7 @@ impl<'a> ResourceBinding<'a> {
 }
 
 #[repr(u16)]
-#[derive(Clone, Copy, Debug, FromPrimitive)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ProgramType {
     Pixel = 0xFFFF,
     Vertex = 0xFFFE,
@@ -274,7 +349,7 @@ pub struct RdefChunk<'a> {
 }
 
 impl<'a> RdefChunk<'a> {
-    pub fn parse<'b>(decoder: &'b mut decoder::Decoder) -> Result<RdefChunk<'b>, State> {
+    pub fn parse<'b>(decoder: &'b mut Decoder) -> Result<RdefChunk<'b>, State> {
         let cb_count = decoder.read_u32();
         let cb_offset = decoder.read_u32();
 
@@ -284,11 +359,7 @@ impl<'a> RdefChunk<'a> {
         let minor = decoder.read_u8();
         let major = decoder.read_u8();
 
-        let program_ty = match num::FromPrimitive::from_u16(decoder.read_u16()) {
-            Some(ty) => ty,
-            None => return Err(State::DecoderError(Error::DecodeEnumFailed(decoder.get_offset()))),
-        };
-
+        let program_ty = read_enum!(ProgramType, decoder, u16);
         let flags = decoder.read_u32();
         let author_offset = decoder.read_u32();
 

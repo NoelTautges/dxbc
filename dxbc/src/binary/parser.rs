@@ -1,4 +1,4 @@
-use super::decoder;
+use super::decoder::Decoder;
 use super::error;
 use crate::dr;
 
@@ -17,6 +17,19 @@ pub enum State {
     ChunkIncorrect,
     DecoderError(error::Error),
 }
+
+macro_rules! read_enum {
+    ($enum:ty, $decoder:ident, $ty:ty) => {
+        paste! {
+            match <$enum>::from_int($decoder.[<read_ $ty>]().into()) {
+                Ok(v) => v,
+                Err(_) => return Err(State::DecoderError(Error::DecodeEnumFailed($decoder.get_offset()))),
+            }
+        }
+    }
+}
+
+pub(crate) use read_enum;
 
 pub enum Action {
     Continue,
@@ -61,14 +74,14 @@ fn try_consume(action: Action) -> Result<(), State> {
 }
 
 pub struct Parser<'c, 'd> {
-    decoder: decoder::Decoder<'d>,
+    decoder: Decoder<'d>,
     consumer: &'c mut dyn Consumer,
 }
 
 impl<'c, 'd> Parser<'c, 'd> {
     pub fn new(binary: &'d [u8], consumer: &'c mut dyn Consumer) -> Self {
         Parser {
-            decoder: decoder::Decoder::new(binary),
+            decoder: Decoder::new(binary),
             consumer,
         }
     }
