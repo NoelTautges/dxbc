@@ -316,24 +316,22 @@ pub struct ConstantBuffer<'a> {
 
 impl<'a> ConstantBuffer<'a> {
     pub fn parse(decoder: &mut Decoder<'a>, major: u8) -> Result<Self, State> {
-        let name_offset = decoder.read_u32();
-        // TODO: add variables to constant buffers
-        let var_count = decoder.read_u32();
+        let name_offset = decoder.read_u32() as usize;
+        let var_count = decoder.read_u32() as usize;
         let var_offset = decoder.read_u32() as usize;
         let size = decoder.read_u32();
         let flags = decoder.read_u32();
         let ty = decoder.read_u32();
 
         let name = decoder
-            .seek(name_offset as usize)
+            .seek(name_offset)
             .str()
             .map_err(State::DecoderError)?;
-        let mut variables = Vec::new();
-
-        decoder.seek_mut(var_offset);
-
+        
+        let mut variables = Vec::with_capacity(var_count);
+        let mut var_decoder = decoder.seek(var_offset);
         for _ in 0..var_count {
-            variables.push(ShaderVariable::parse(decoder, major)?);
+            variables.push(ShaderVariable::parse(&mut var_decoder, major)?);
         }
 
         Ok(Self {
@@ -414,11 +412,11 @@ pub struct RdefChunk<'a> {
 
 impl<'a> RdefChunk<'a> {
     pub fn parse<'b>(decoder: &'b mut Decoder) -> Result<RdefChunk<'b>, State> {
-        let cb_count = decoder.read_u32();
-        let cb_offset = decoder.read_u32();
+        let cb_count = decoder.read_u32() as usize;
+        let cb_offset = decoder.read_u32() as usize;
 
-        let bind_count = decoder.read_u32();
-        let bind_offset = decoder.read_u32();
+        let bind_count = decoder.read_u32() as usize;
+        let bind_offset = decoder.read_u32() as usize;
 
         let minor = decoder.read_u8();
         let major = decoder.read_u8();
@@ -444,14 +442,14 @@ impl<'a> RdefChunk<'a> {
             None
         };
 
-        decoder.seek_mut(cb_offset as usize);
-        let mut constant_buffers = Vec::new();
+        decoder.seek_mut(cb_offset);
+        let mut constant_buffers = Vec::with_capacity(cb_count);
         for _ in 0..cb_count {
             constant_buffers.push(ConstantBuffer::parse(decoder, major)?);
         }
 
-        decoder.seek_mut(bind_offset as usize);
-        let mut resource_bindings = Vec::new();
+        decoder.seek_mut(bind_offset);
+        let mut resource_bindings = Vec::with_capacity(bind_count);
         for _ in 0..bind_count {
             resource_bindings.push(ResourceBinding::parse(decoder)?);
         }
