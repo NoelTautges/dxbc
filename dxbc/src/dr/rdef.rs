@@ -11,14 +11,14 @@ bitflags! {
         const TEXTURE_COMPONENTS = 0xc;
         const UNUSED = 0x10;
     }
-    
+
     pub struct ShaderVariableFlags: u32 {
         const USER_PACKED = 0x1;
         const USED = 0x2;
         const INTERFACE_POINTER = 0x4;
         const INTERFACE_PARAMETER = 0x8;
     }
-    
+
     pub struct ConstantBufferFlags: u32 {
         const USER_PACKED = 0x1;
     }
@@ -146,7 +146,7 @@ pub struct ShaderTypeMember<'a> {
 }
 
 impl<'a> ShaderTypeMember<'a> {
-    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>, major: u8) -> Result<Self, State> {
         let name_offset = decoder.read_u32() as usize;
         let ty_offset = decoder.read_u32() as usize;
         let offset = decoder.read_u32();
@@ -155,13 +155,9 @@ impl<'a> ShaderTypeMember<'a> {
             .seek(name_offset)
             .str()
             .map_err(State::DecoderError)?;
-        let ty = ShaderType::parse(&mut decoder.seek(ty_offset))?;
+        let ty = ShaderType::parse(&mut decoder.seek(ty_offset), major)?;
 
-        Ok(Self {
-            name,
-            ty,
-            offset,
-        })
+        Ok(Self { name, ty, offset })
     }
 }
 
@@ -174,22 +170,60 @@ pub struct ShaderType<'a> {
     columns: u16,
     count: u16,
     members: Vec<ShaderTypeMember<'a>>,
+    parent_ty_class: Option<ShaderVariableClass>,
+    parent_name: Option<&'a str>,
+    unknowns: [Option<u32>; 4],
 }
 
 impl<'a> ShaderType<'a> {
-    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>, major: u8) -> Result<Self, State> {
         let class = read_enum!(ShaderVariableClass, decoder, u16);
         let ty = read_enum!(ShaderVariableType, decoder, u16);
         let rows = decoder.read_u16();
         let columns = decoder.read_u16();
         let count = decoder.read_u16();
         let member_count = decoder.read_u16();
-        let member_offset = decoder.read_u16();
+        let member_offset = decoder.read_u32() as usize;
+
+        let mut parent_ty_class = None;
+        let mut parent_name = None;
+        let mut unknowns = [None; 4];
+
+        if major >= 5 {
+            let parent_ty_offset = decoder.read_u32() as usize;
+            if parent_ty_offset != 0 {
+                let mut parent_ty_decoder = decoder.seek(parent_ty_offset);
+                parent_ty_class = Some(read_enum!(ShaderVariableClass, parent_ty_decoder, u16));
+                unknowns[0] = Some(parent_ty_decoder.read_u16() as u32);
+            }
+
+            let unknown_2_offset = decoder.read_u32();
+            if unknown_2_offset != 0 {
+                unknowns[1] = Some(decoder.seek(unknown_2_offset as usize).read_u32());
+            }
+
+            unknowns[2] = Some(decoder.read_u32());
+
+            let unknown_5_offset = decoder.read_u32();
+            if unknown_5_offset != 0 {
+                unknowns[3] = Some(decoder.seek(unknown_5_offset as usize).read_u32());
+            }
+
+            let parent_name_offset = decoder.read_u32() as usize;
+            if parent_name_offset != 0 {
+                parent_name = Some(
+                    decoder
+                        .seek(parent_name_offset)
+                        .str()
+                        .map_err(State::DecoderError)?,
+                );
+            }
+        }
 
         let mut members = Vec::with_capacity(member_count.into());
-        decoder.seek_mut(member_offset.into());
+        decoder.seek_mut(member_offset);
         for _ in 0..member_count {
-            members.push(ShaderTypeMember::parse(decoder)?);
+            members.push(ShaderTypeMember::parse(decoder, major)?);
         }
 
         Ok(Self {
@@ -199,6 +233,9 @@ impl<'a> ShaderType<'a> {
             columns,
             count,
             members,
+            parent_ty_class,
+            parent_name,
+            unknowns,
         })
     }
 }
@@ -211,11 +248,15 @@ pub struct ShaderVariable<'a> {
     size: u32,
     flags: ShaderVariableFlags,
     ty: ShaderType<'a>,
-    // TODO: default value
+    default_value: Vec<&'a [u8]>,
+    start_texture: Option<u32>,
+    texture_size: Option<u32>,
+    start_sampler: Option<u32>,
+    sampler_size: Option<u32>,
 }
 
 impl<'a> ShaderVariable<'a> {
-    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>, major: u8) -> Result<Self, State> {
         let name_offset = decoder.read_u32() as usize;
         let offset = decoder.read_u32();
         let size = decoder.read_u32();
@@ -227,8 +268,26 @@ impl<'a> ShaderVariable<'a> {
             .seek(name_offset)
             .str()
             .map_err(State::DecoderError)?;
-        let ty = ShaderType::parse(&mut decoder.seek(ty_offset))?;
-        // TODO: default
+        let ty = ShaderType::parse(&mut decoder.seek(ty_offset), major)?;
+        // TODO: figure out scenarios that could cause non-4-divisible default values
+        let values_count = (size / 4) as usize;
+        let mut default_value = Vec::with_capacity(values_count);
+        if default_offset != 0 {
+            for _ in 0..values_count {
+                default_value.push(decoder.bytes(4));
+            }
+        }
+
+        let (start_texture, texture_size, start_sampler, sampler_size) = if major >= 5 {
+            (
+                Some(decoder.read_u32()),
+                Some(decoder.read_u32()),
+                Some(decoder.read_u32()),
+                Some(decoder.read_u32()),
+            )
+        } else {
+            (None, None, None, None)
+        };
 
         Ok(Self {
             name,
@@ -236,6 +295,11 @@ impl<'a> ShaderVariable<'a> {
             size,
             flags,
             ty,
+            default_value,
+            start_texture,
+            texture_size,
+            start_sampler,
+            sampler_size,
         })
     }
 }
@@ -251,7 +315,7 @@ pub struct ConstantBuffer<'a> {
 }
 
 impl<'a> ConstantBuffer<'a> {
-    pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
+    pub fn parse(decoder: &mut Decoder<'a>, major: u8) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
         // TODO: add variables to constant buffers
         let var_count = decoder.read_u32();
@@ -269,7 +333,7 @@ impl<'a> ConstantBuffer<'a> {
         decoder.seek_mut(var_offset);
 
         for _ in 0..var_count {
-            variables.push(ShaderVariable::parse(decoder)?);
+            variables.push(ShaderVariable::parse(decoder, major)?);
         }
 
         Ok(Self {
@@ -383,7 +447,7 @@ impl<'a> RdefChunk<'a> {
         decoder.seek_mut(cb_offset as usize);
         let mut constant_buffers = Vec::new();
         for _ in 0..cb_count {
-            constant_buffers.push(ConstantBuffer::parse(decoder)?);
+            constant_buffers.push(ConstantBuffer::parse(decoder, major)?);
         }
 
         decoder.seek_mut(bind_offset as usize);
