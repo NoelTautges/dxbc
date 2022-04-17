@@ -166,15 +166,15 @@ impl<'a> ShaderTypeMember<'a> {
 #[repr(C)]
 #[derive(Debug)]
 pub struct ShaderType<'a> {
-    class: ShaderVariableClass,
-    ty: ShaderVariableType,
-    rows: u16,
-    columns: u16,
-    count: u16,
-    members: Vec<ShaderTypeMember<'a>>,
-    parent_ty_class: Option<ShaderVariableClass>,
-    parent_name: Option<&'a str>,
-    unknowns: [Option<u32>; 4],
+    pub class: ShaderVariableClass,
+    pub ty: ShaderVariableType,
+    pub rows: u16,
+    pub columns: u16,
+    pub count: u16,
+    pub members: Vec<ShaderTypeMember<'a>>,
+    pub parent_ty_class: Option<ShaderVariableClass>,
+    pub parent_name: Option<&'a str>,
+    pub unknowns: [Option<u32>; 4],
 }
 
 impl<'a> ShaderType<'a> {
@@ -245,16 +245,16 @@ impl<'a> ShaderType<'a> {
 #[repr(C)]
 #[derive(Debug)]
 pub struct ShaderVariable<'a> {
-    name: &'a str,
-    offset: u32,
-    size: u32,
-    flags: ShaderVariableFlags,
-    ty: ShaderType<'a>,
-    default_value: Vec<&'a [u8]>,
-    start_texture: Option<u32>,
-    texture_size: Option<u32>,
-    start_sampler: Option<u32>,
-    sampler_size: Option<u32>,
+    pub name: &'a str,
+    pub offset: u32,
+    pub size: u32,
+    pub flags: ShaderVariableFlags,
+    pub ty: ShaderType<'a>,
+    pub default_value: Vec<&'a [u8]>,
+    pub start_texture: Option<u32>,
+    pub texture_size: Option<u32>,
+    pub start_sampler: Option<u32>,
+    pub sampler_size: Option<u32>,
 }
 
 impl<'a> ShaderVariable<'a> {
