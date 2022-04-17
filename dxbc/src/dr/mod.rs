@@ -1,5 +1,7 @@
+use int_enum::IntEnum;
+
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ResourceReturnType {
     NotApplicable = 0,
     UNorm = 1,

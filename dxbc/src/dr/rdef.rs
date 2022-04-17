@@ -2,6 +2,8 @@ use crate::binary::*;
 
 use int_enum::IntEnum;
 
+use super::ResourceReturnType;
+
 bitflags! {
     pub struct ShaderInputFlags: u32 {
         const USER_PACKED = 0x1;
@@ -34,20 +36,20 @@ pub enum ConstantBufferType {
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ShaderInputType {
-    CBuffer,
-    TBuffer,
-    Texture,
-    Sampler,
-    UavRwTyped,
-    Structured,
-    UavRwStructured,
-    ByteAddress,
-    UavRwByteAddress,
-    UavAppendStructured,
-    UavConsumeStructured,
-    UavRwStructuredWithCounter,
+    CBuffer = 0,
+    TBuffer = 1,
+    Texture = 2,
+    Sampler = 3,
+    UavRwTyped = 4,
+    Structured = 5,
+    UavRwStructured = 6,
+    ByteAddress = 7,
+    UavRwByteAddress = 8,
+    UavAppendStructured = 9,
+    UavConsumeStructured = 10,
+    UavRwStructuredWithCounter = 11,
 }
 
 #[repr(u32)]
@@ -115,7 +117,7 @@ pub enum ShaderVariableType {
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, IntEnum)]
 pub enum ViewDimension {
     Unknown = 0,
     Buffer = 1,
@@ -348,25 +350,25 @@ impl<'a> ConstantBuffer<'a> {
 #[derive(Debug)]
 pub struct ResourceBinding<'a> {
     pub name: &'a str,
-    pub input_type: u32,
-    pub return_type: u32,
-    pub view_dimension: u32,
+    pub input_type: ShaderInputType,
+    pub return_type: ResourceReturnType,
+    pub view_dimension: ViewDimension,
     pub sample_count: u32,
     pub bind_point: u32,
     pub bind_count: u32,
-    pub input_flags: u32,
+    pub input_flags: ShaderInputFlags,
 }
 
 impl<'a> ResourceBinding<'a> {
     pub fn parse(decoder: &mut Decoder<'a>) -> Result<Self, State> {
         let name_offset = decoder.read_u32();
-        let input_type = decoder.read_u32();
-        let return_type = decoder.read_u32();
-        let view_dimension = decoder.read_u32();
+        let input_type = read_enum!(ShaderInputType, decoder, u32);
+        let return_type = read_enum!(ResourceReturnType, decoder, u32);
+        let view_dimension = read_enum!(ViewDimension, decoder, u32);
         let sample_count = decoder.read_u32();
         let bind_point = decoder.read_u32();
         let bind_count = decoder.read_u32();
-        let input_flags = decoder.read_u32();
+        let input_flags = ShaderInputFlags::from_bits_truncate(decoder.read_u32());
 
         let name = decoder
             .seek(name_offset as usize)
