@@ -1180,6 +1180,20 @@ pub struct And<'a> {
 }
 
 #[derive(Debug)]
+pub struct Eq<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Ge<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
 pub struct Ige<'a> {
     pub dst: OperandToken0<'a>,
     pub a: OperandToken0<'a>,
@@ -1187,7 +1201,21 @@ pub struct Ige<'a> {
 }
 
 #[derive(Debug)]
+pub struct Lt<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
 pub struct Ne<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Or<'a> {
     pub dst: OperandToken0<'a>,
     pub a: OperandToken0<'a>,
     pub b: OperandToken0<'a>,
@@ -1231,10 +1259,28 @@ pub struct Dp4<'a> {
 }
 
 #[derive(Debug)]
+pub struct Exp<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Frc<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
 pub struct IAdd<'a> {
     pub dst: OperandToken0<'a>,
     pub a: OperandToken0<'a>,
     pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Log<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
 }
 
 #[derive(Debug)]
@@ -1293,6 +1339,13 @@ pub struct RoundZ<'a> {
 #[derive(Debug)]
 pub struct Rsq<'a> {
     pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct SinCos<'a> {
+    pub dst_sin: OperandToken0<'a>,
+    pub dst_cos: OperandToken0<'a>,
     pub src: OperandToken0<'a>,
 }
 
@@ -1420,15 +1473,22 @@ pub enum Operands<'a> {
     DclIndexableTemp(DclIndexableTemp),
     // Boolean
     And(And<'a>),
+    Eq(Eq<'a>),
+    Ge(Ge<'a>),
     Ige(Ige<'a>),
+    Lt(Lt<'a>),
     Ne(Ne<'a>),
+    Or(Or<'a>),
     // Math
     Add(Add<'a>),
     Div(Div<'a>),
     Dp2(Dp2<'a>),
     Dp3(Dp3<'a>),
     Dp4(Dp4<'a>),
+    Exp(Exp<'a>),
+    Frc(Frc<'a>),
     IAdd(IAdd<'a>),
+    Log(Log<'a>),
     Mad(Mad<'a>),
     Max(Max<'a>),
     Min(Min<'a>),
@@ -1438,6 +1498,7 @@ pub enum Operands<'a> {
     RoundPi(RoundPi<'a>),
     RoundZ(RoundZ<'a>),
     Rsq(Rsq<'a>),
+    SinCos(SinCos<'a>),
     Sqrt(Sqrt<'a>),
     // Memory
     Mov(Mov<'a>),
@@ -1459,7 +1520,7 @@ pub enum Operands<'a> {
     Sample(Sample<'a>),
     SampleL(SampleL<'a>),
     // All others
-    Unknown,
+    Unknown(u32),
 }
 
 impl<'a> SparseInstruction<'a> {
@@ -1531,12 +1592,32 @@ impl<'a> SparseInstruction<'a> {
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_EQ => Operands::Eq(Eq {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_GE => Operands::Ge(Ge {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
             D3D10_SB_OPCODE_IGE => Operands::Ige(Ige {
                 dst: OperandToken0::parse(decoder),
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_LT => Operands::Lt(Lt {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
             D3D10_SB_OPCODE_NE => Operands::Ne(Ne {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_OR => Operands::Or(Or {
                 dst: OperandToken0::parse(decoder),
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
@@ -1567,10 +1648,22 @@ impl<'a> SparseInstruction<'a> {
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_EXP => Operands::Exp(Exp {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_FRC => Operands::Frc(Frc {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
             D3D10_SB_OPCODE_IADD => Operands::IAdd(IAdd {
                 dst: OperandToken0::parse(decoder),
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_LOG => Operands::Log(Log {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
             }),
             D3D10_SB_OPCODE_MAD => Operands::Mad(Mad {
                 dst: OperandToken0::parse(decoder),
@@ -1611,6 +1704,11 @@ impl<'a> SparseInstruction<'a> {
             }),
             D3D10_SB_OPCODE_RSQ => Operands::Rsq(Rsq {
                 dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_SINCOS => Operands::SinCos(SinCos {
+                dst_sin: OperandToken0::parse(decoder),
+                dst_cos: OperandToken0::parse(decoder),
                 src: OperandToken0::parse(decoder),
             }),
             D3D10_SB_OPCODE_SQRT => Operands::Sqrt(Sqrt {
@@ -1674,7 +1772,7 @@ impl<'a> SparseInstruction<'a> {
                     decoder.skip(4 * (len as usize - 1));
                 }
 
-                Operands::Unknown
+                Operands::Unknown(ty)
             }
         };
 
