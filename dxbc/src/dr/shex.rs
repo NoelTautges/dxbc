@@ -940,6 +940,8 @@ impl<'a> fmt::Debug for OperandToken0<'a> {
     }
 }
 
+// Declarations
+
 #[derive(Debug)]
 pub struct DclGlobalFlags {
     pub global_flags: u32,
@@ -1168,12 +1170,7 @@ pub struct DclIndexableTemp {
     pub num_components: u32,
 }
 
-#[derive(Debug)]
-pub struct Add<'a> {
-    pub dst: OperandToken0<'a>,
-    pub a: OperandToken0<'a>,
-    pub b: OperandToken0<'a>,
-}
+// Boolean
 
 #[derive(Debug)]
 pub struct And<'a> {
@@ -1183,7 +1180,58 @@ pub struct And<'a> {
 }
 
 #[derive(Debug)]
-pub struct Mul<'a> {
+pub struct Ige<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Ne<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+// Math
+
+#[derive(Debug)]
+pub struct Add<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Div<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Dp2<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Dp3<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Dp4<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct IAdd<'a> {
     pub dst: OperandToken0<'a>,
     pub a: OperandToken0<'a>,
     pub b: OperandToken0<'a>,
@@ -1198,10 +1246,79 @@ pub struct Mad<'a> {
 }
 
 #[derive(Debug)]
+pub struct Max<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Min<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Mul<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct RoundNe<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct RoundNi<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct RoundPi<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct RoundZ<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Rsq<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+#[derive(Debug)]
+pub struct Sqrt<'a> {
+    pub dst: OperandToken0<'a>,
+    pub src: OperandToken0<'a>,
+}
+
+// Memory
+
+#[derive(Debug)]
 pub struct Mov<'a> {
     pub dst: OperandToken0<'a>,
     pub src: OperandToken0<'a>,
 }
+
+#[derive(Debug)]
+pub struct MovC<'a> {
+    pub dst: OperandToken0<'a>,
+    pub a: OperandToken0<'a>,
+    pub b: OperandToken0<'a>,
+    pub c: OperandToken0<'a>,
+}
+
+// Conversions
 
 #[derive(Debug)]
 pub struct Itof<'a> {
@@ -1221,21 +1338,19 @@ pub struct Ftou<'a> {
     pub src: OperandToken0<'a>,
 }
 
-#[derive(Debug)]
-pub struct Loop;
+// Control flow
 
 #[derive(Debug)]
-pub struct EndLoop;
+pub struct If<'a> {
+    pub src: OperandToken0<'a>,
+}
 
 #[derive(Debug)]
 pub struct BreakC<'a> {
     pub src: OperandToken0<'a>,
 }
 
-#[derive(Debug)]
-pub struct If<'a> {
-    pub src: OperandToken0<'a>,
-}
+// Textures
 
 #[derive(Debug)]
 pub struct SampleL<'a> {
@@ -1289,6 +1404,7 @@ pub struct SparseInstruction<'a> {
 
 #[derive(Debug)]
 pub enum Operands<'a> {
+    // Declarations
     DclGlobalFlags(DclGlobalFlags),
     DclInput(DclInput<'a>),
     DclInputPs(DclInputPs<'a>),
@@ -1302,14 +1418,35 @@ pub enum Operands<'a> {
     DclInputPsSgv(DclInputPsSgv<'a>),
     DclTemps(DclTemps),
     DclIndexableTemp(DclIndexableTemp),
-    Add(Add<'a>),
+    // Boolean
     And(And<'a>),
-    Mul(Mul<'a>),
+    Ige(Ige<'a>),
+    Ne(Ne<'a>),
+    // Math
+    Add(Add<'a>),
+    Div(Div<'a>),
+    Dp2(Dp2<'a>),
+    Dp3(Dp3<'a>),
+    Dp4(Dp4<'a>),
+    IAdd(IAdd<'a>),
     Mad(Mad<'a>),
+    Max(Max<'a>),
+    Min(Min<'a>),
+    Mul(Mul<'a>),
+    RoundNe(RoundNe<'a>),
+    RoundNi(RoundNi<'a>),
+    RoundPi(RoundPi<'a>),
+    RoundZ(RoundZ<'a>),
+    Rsq(Rsq<'a>),
+    Sqrt(Sqrt<'a>),
+    // Memory
     Mov(Mov<'a>),
+    MovC(MovC<'a>),
+    // Conversions
     Itof(Itof<'a>),
     Utof(Utof<'a>),
     Ftou(Ftou<'a>),
+    // Control flow
     If(If<'a>),
     Else,
     EndIf,
@@ -1317,9 +1454,11 @@ pub enum Operands<'a> {
     EndLoop,
     Break,
     BreakC(BreakC<'a>),
+    Ret,
+    // Textures
     Sample(Sample<'a>),
     SampleL(SampleL<'a>),
-    Ret,
+    // All others
     Unknown,
 }
 
@@ -1338,6 +1477,7 @@ impl<'a> SparseInstruction<'a> {
         }
 
         let operands = match ty {
+            // Declarations
             D3D10_SB_OPCODE_DCL_GLOBAL_FLAGS => Operands::DclGlobalFlags(DclGlobalFlags {
                 global_flags: DECODE_D3D10_SB_GLOBAL_FLAGS(unsafe { *opcode.word }),
             }),
@@ -1385,17 +1525,49 @@ impl<'a> SparseInstruction<'a> {
                 operand: OperandToken0::parse(decoder),
                 operand_2: OperandToken0::parse(decoder),
             }),
-            D3D10_SB_OPCODE_ADD => Operands::Add(Add {
-                dst: OperandToken0::parse(decoder),
-                a: OperandToken0::parse(decoder),
-                b: OperandToken0::parse(decoder),
-            }),
+            // Boolean
             D3D10_SB_OPCODE_AND => Operands::And(And {
                 dst: OperandToken0::parse(decoder),
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
             }),
-            D3D10_SB_OPCODE_MUL => Operands::Mul(Mul {
+            D3D10_SB_OPCODE_IGE => Operands::Ige(Ige {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_NE => Operands::Ne(Ne {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            // Math
+            D3D10_SB_OPCODE_ADD => Operands::Add(Add {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DIV => Operands::Div(Div {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DP2 => Operands::Dp2(Dp2 {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DP3 => Operands::Dp3(Dp3 {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_DP4 => Operands::Dp4(Dp4 {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_IADD => Operands::IAdd(IAdd {
                 dst: OperandToken0::parse(decoder),
                 a: OperandToken0::parse(decoder),
                 b: OperandToken0::parse(decoder),
@@ -1406,10 +1578,57 @@ impl<'a> SparseInstruction<'a> {
                 b: OperandToken0::parse(decoder),
                 c: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_MAX => Operands::Max(Max {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_MIN => Operands::Min(Min {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_MUL => Operands::Mul(Mul {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ROUND_NE => Operands::RoundNe(RoundNe {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ROUND_NI => Operands::RoundNi(RoundNi {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ROUND_PI => Operands::RoundPi(RoundPi {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_ROUND_Z => Operands::RoundZ(RoundZ {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_RSQ => Operands::Rsq(Rsq {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            D3D10_SB_OPCODE_SQRT => Operands::Sqrt(Sqrt {
+                dst: OperandToken0::parse(decoder),
+                src: OperandToken0::parse(decoder),
+            }),
+            // Memory
             D3D10_SB_OPCODE_MOV => Operands::Mov(Mov {
                 dst: OperandToken0::parse(decoder),
                 src: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_MOVC => Operands::MovC(MovC {
+                dst: OperandToken0::parse(decoder),
+                a: OperandToken0::parse(decoder),
+                b: OperandToken0::parse(decoder),
+                c: OperandToken0::parse(decoder),
+            }),
+            // Conversions
             D3D10_SB_OPCODE_ITOF => Operands::Itof(Itof {
                 dst: OperandToken0::parse(decoder),
                 src: OperandToken0::parse(decoder),
@@ -1422,6 +1641,7 @@ impl<'a> SparseInstruction<'a> {
                 dst: OperandToken0::parse(decoder),
                 src: OperandToken0::parse(decoder),
             }),
+            // Control flow
             D3D10_SB_OPCODE_IF => Operands::If(If {
                 src: OperandToken0::parse(decoder),
             }),
@@ -1433,6 +1653,8 @@ impl<'a> SparseInstruction<'a> {
             D3D10_SB_OPCODE_BREAKC => Operands::BreakC(BreakC {
                 src: OperandToken0::parse(decoder),
             }),
+            D3D10_SB_OPCODE_RET => Operands::Ret,
+            // Textures
             D3D10_SB_OPCODE_SAMPLE => Operands::Sample(Sample {
                 dst: OperandToken0::parse(decoder),
                 src_address: OperandToken0::parse(decoder),
@@ -1446,7 +1668,7 @@ impl<'a> SparseInstruction<'a> {
                 src_sampler: OperandToken0::parse(decoder),
                 src_lod: OperandToken0::parse(decoder),
             }),
-            D3D10_SB_OPCODE_RET => Operands::Ret,
+            // All others
             _ => {
                 if len > 1 {
                     decoder.skip(4 * (len as usize - 1));
